@@ -1,10 +1,10 @@
 # FOR THE LOVE OF GOD, DO NOT USE THE RUN BUTTON. JUST PRESS CTRL+R
 library(class)
 
-source("C:/Users/Alec/Desktop/Uni/SML/SVN/Basefolder/loadImage.R")
+source ('A:/Machine_Learning/Basefolder/loadImage.R')
 
 q=0
-x= loadSinglePersonsData(300,4,0,"C:/Users/Alec/Desktop/Uni/SML/SVN/2017/group")
+x=loadSinglePersonsData(300,4,2,"A:/Machine_Learning/2017/group") 
 avg_data<-array(0,dim=c(10,2))
 sd<-array(0,dim=c(10,2))
 for(q in 1:10)
