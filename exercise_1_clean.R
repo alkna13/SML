@@ -1,28 +1,70 @@
-source("C:/Users/Alec/Desktop/Uni/SML/SVN/Basefolder/loadImage.R")
+source("C:/Users/Alec/Desktop/Uni/SML/exercise 1/loadImage.R")
 
-#####################################
+loadMultiplePersonsData <- function(dpi=300,startgrp=4,endgrp=4,location)
+{
+  options(show.error.messages = FALSE)
+  memstart=0
+  x=try(loadSinglePersonsData(dpi,startgrp,0,location))#DPI change
+  if(class(x)=="try-error")
+  {
+    x=loadSinglePersonsData(dpi,startgrp,1,location)#DPI change
+    memstart=1
+  }
+  
+  for(i in startgrp:endgrp)
+  {
+    for(j in 0:4)
+    {
+      if(j!=memstart||i!=startgrp)
+      {
+        y=try(loadSinglePersonsData(dpi,i,j,location))#DPI change
+        if(class(y)!="try-error")
+        {
+          x<-rbind2(y,x)
+        }
+      }
+    }
+  }
+  options(show.error.messages = TRUE)
+  return(x)
+}
+
+#######################################################
+#
 # Exercise 1.4
 # change the top 4 variables to do the different tasks
-#####################################
+#
+#######################################################
+
+
+
 
 test_split=0.5  #how large should the training set be 0.9=90/10 training/testing
 runs=1          #how many times to run this loop with different random seeds
 k_runs=1        #number of different k values to run
 k_start=10      #starting k value. will just be the k used if k_runs=1
 
-x= loadSinglePersonsData(300,4,0,"C:/Users/Alec/Desktop/Uni/SML/SVN/2017/group")
+t_time<-proc.time()
+
+#select which you want
+#x= loadSinglePersonsData(300,4,0,"C:/Users/Alec/Desktop/Uni/SML/SVN/2017/group")
+#left to right the inputs are: (dpi,start_group,end_group,file_location)
+x_l= loadMultiplePersonsData(300,0,12,"C:/Users/Alec/Desktop/Uni/SML/SVN/2017/group")
 
 data_out<-array(0,dim=c(runs,k_runs,2))
-#sd<-array(0,dim=c(10,2))
+
 
 for(q in 1:runs)
 {
   set.seed(990+q)
-  dataset_shuffle <- x[sample(nrow(x)),]
+  
+  #change data set here to/from x/x_l
+  #dataset_shuffle <- x[sample(nrow(x)),]
+  dataset_shuffle <- x_l[sample(nrow(x_l)),] 
   
   
   #create the training set
-  dataset_train<- array(, dim=c((4000*test_split),3365))
+  dataset_train<- array(, dim=c((dim(dataset_shuffle)[1]*test_split),dim(dataset_shuffle)[2]))
   for(i in 1:dim(dataset_train)[1])
   {
     #kNN training set
@@ -30,11 +72,11 @@ for(q in 1:runs)
   }
   
   #create the testing set
-  dataset_test<- array(, dim=c(4000-dim(dataset_train)[1],3365))
+  dataset_test<- array(, dim=c(dim=c((dim(dataset_shuffle)[1]-dim(dataset_train)[1]),dim(dataset_shuffle)[2])))
   for(i in 1:dim(dataset_test)[1])
   {
     #kNN testing set
-    dataset_test[i,]<-dataset_shuffle[i+(4000*test_split),]
+    dataset_test[i,]<-dataset_shuffle[i+(dim(dataset_shuffle)[1]*test_split),]
   }
   
   #training set classification vector
@@ -85,7 +127,8 @@ for(q in 1:runs)
   }
   
 }
-
+t_time<-proc.time()-t_time
+cat("Total process time: ", t_time[3]/60, " minutes")
 #use View(data_out[q,,]) to view specific run stats. column 1 is accuracy. replace q with a run number
 #use View(data_out[,k,]) to view specific run stats. column 1 is accuracy. replace k with a desired k to view
 #OR uncomment the one below to do all
