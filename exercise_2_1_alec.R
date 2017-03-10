@@ -38,81 +38,108 @@ loadMultiplePersonsData <- function(dpi=300,startgrp=4,endgrp=4,location)
 #
 ################################################################
 
-#select which you want
-x= loadSinglePersonsData(300,4,0,"C:/Users/Alec/Desktop/Uni/SML/SVN/2017/group")
-#left to right the inputs are: (dpi,start_group,end_group,file_location)
-#x_l= loadMultiplePersonsData(300,3,8,"C:/Users/Alec/Desktop/Uni/SML/SVN/2017/group")
+#person independent- person not included in training set
 
 
-#dataset_shuffle <- x[sample(nrow(x)),]
-#dataset_shuffle <- x_l[sample(nrow(x_l)),] 
-#dataset_shuffle<-x_l
-
-
-dataset_0<- array(, dim=c(400,3365))
-for(i in 1:400)
-{
-  #kNN testing set
-  dataset_0[i,]<-x[i,]
-}
-
-pca<-prcomp(x)
-pca<-prcomp(dataset_shuffle)
-
-par(mar=rep(2,4))
-plot(pca$sdev)
-pcpercent=0
-pc_desired=98
-total_var=0
-i=1
-for(i in 1:3365)
-{
-  total_var<-total_var + pca$sdev[i]
-}
-print(total_var)
-aaavar=0
-i=0
-acc_var=0
-while(pcpercent<pc_desired)
-#for(i in 1:3365)
-{
-  i=i+1
-  acc_var<-acc_var+pca$sdev[i]
-  pcpercent<-acc_var/(total_var/100)
-  #print(pcpercent)
-  #if(pcpercent>pc_desired){break}
-  #pcpercent=pcpercent+pca$sdev[i]
-  
-}
-print(i)
 
 ########################################################
 #
-# run this to acquire data
+# 2.1.1
+# load data and apply pca
 #
 ########################################################
 loadData <- function()
 {
   
+  
+  #select which you want. load only once. takes forever
+  x= loadSinglePersonsData(300,4,0,"C:/Users/Alec/Desktop/Uni/SML/SVN/2017/group")
+  #left to right the inputs are: (dpi,start_group,end_group,file_location)
+  x_l= loadMultiplePersonsData(300,3,8,"C:/Users/Alec/Desktop/Uni/SML/SVN/2017/group")
+  
+  
+  person_dependent=TRUE
+  use_multi=TRUE
+  test_split=0.9  #how large should the training set be 0.9=90/10 training/testing
+  
+  set.seed(990)
+  
+
+  
+  if(use_multi)
+  {
+    if(person_dependent)
+    {
+      dataset_shuffle <- x_l[sample(nrow(x_l)),]
+    } else
+    {
+      dataset_shuffle <-x_l
+    }
+  } else
+  {
+    dataset_shuffle <- x[sample(nrow(x)),]
+    print("no")
+  }
+  
+  
+  
+  
+  
+  
+  #create the training set
+  dataset_train<- array(, dim=c((dim(dataset_shuffle)[1]*test_split),dim(dataset_shuffle)[2]))
+  for(i in 1:dim(dataset_train)[1])
+  {
+    #kNN training set
+    dataset_train[i,]<-dataset_shuffle[i,]
+  }
+  
+  #create the testing set
+  dataset_test<- array(, dim=c(dim=c((dim(dataset_shuffle)[1]-dim(dataset_train)[1]),dim(dataset_shuffle)[2])))
+  for(i in 1:dim(dataset_test)[1])
+  {
+    #kNN testing set
+    dataset_test[i,]<-dataset_shuffle[i+(dim(dataset_shuffle)[1]*test_split),]
+  }
+  
+  #training set classification vector
+  train_class<- array(, dim=c(1,dim(dataset_train)[1]))
+  for(i in 1:dim(dataset_train)[1])
+  {
+    train_class[i]=dataset_train[i,1]
+  }
+  
+  #testing set classification vector
+  test_class<- array(, dim=c(1,dim(dataset_test)[1]))
+  for(i in 1:dim(dataset_test)[1])
+  {
+    test_class[i]=dataset_test[i,1]
+  }
+  
+  print("Beginning pca on dataset")
+  #pca<-prcomp(dataset_shuffle)
+  rm(dataset_shuffle)
+  
+  
+  pca_time<-proc.time()
+  
+  pca_train<-prcomp(dataset_train)
+  
+  #pca_test<-prcomp(dataset_test)
+  pca_test<-dataset_test %*% pca_train$rotation
+  
+  pca_time<-proc.time()-pca_time
+  #time is third variable
+  
+  
 }
+
+
+
 
 ########################################################
 #
 # 2.1.1
-#
-########################################################
-
-exercise2_1_1 <- function()
-{
-  #change based on data set chosen
-  pca<-prcomp(x)
-}
-
-
-
-########################################################
-#
-# 2.1.2
 #
 ########################################################
 
@@ -123,14 +150,14 @@ exercise2_1_2 <- function()
   
   
   #variance
-  plot(pca$sdev)
+  plot(pca_train$sdev,main="Variance by PCA", xlab="PCA",ylab="Variance")
   
   #accumulated variance absolute
   total_var=0                                         #maximum variance counter variable
-  total_var_plot=array(,dim=c(1,length(pca$sdev)))    #array tracking accumulated total variance(absolute)
-  for(i in 1:length(pca$sdev))
+  total_var_plot=array(,dim=c(1,length(pca_train$sdev)))    #array tracking accumulated total variance(absolute)
+  for(i in 1:length(pca_train$sdev))
   {
-    total_var<-total_var + pca$sdev[i]
+    total_var<-total_var + pca_train$sdev[i]
     total_var_plot[i]<-total_var
   }
   plot(1:3365,total_var_plot,main="Accumulated Variance (absolute)",xlab="PC",ylab="Acumulated Variance")
@@ -138,10 +165,10 @@ exercise2_1_2 <- function()
   
   #accumulated variance percentage
   acc_var=0                                           #accumulated variance
-  acc_var_plot=array(,dim=c(1,length(pca$sdev)))      #array tracking accumulated variance(%)
-  for(i in 1:length(pca$sdev))
+  acc_var_plot=array(,dim=c(1,length(pca_train$sdev)))      #array tracking accumulated variance(%)
+  for(i in 1:length(pca_train$sdev))
   {
-    acc_var<-acc_var+pca$sdev[i]
+    acc_var<-acc_var+pca_train$sdev[i]
     acc_var_plot[i]<-acc_var/(total_var/100)
   }
   plot(1:3365,acc_var_plot,main="Accumulated Variance (%)",xlab="PC",ylab="Acumulated Variance")
@@ -159,13 +186,116 @@ exercise2_1_2 <- function()
 
 ########################################################
 #
-# 2.1.3
+# 2.1.2/3
 #
 ########################################################
 
 exercise2_1_3 <- function()
 {
+  kstart=10
+  kruns=5
+  desired_percent=80
   
+  cat(desired_percent, " percent variance  :  ", k, " different k values \n")
+  
+  time_array <- array(0,dim=c(kruns,3))
+  time_array[,1]<- kstart:(kstart+kruns-1)
+  
+  performance_array <- array(0,dim=c(kruns,3))
+  performance_array[,1]<- kstart:(kstart+kruns-1)
+  
+  for(k in kstart:(kstart+kruns-1))
+  {
+    cat("Progress: ",(k-kstart)/(kruns)*100,"% \n")
+    #print(k)
+    t_time<-proc.time()
+    data_pred<-knn(dataset_train, dataset_test,train_class,k)
+    t_time<-proc.time()-t_time
+    
+    time_array[k-kstart+1,2]<-t_time[3]
+    
+    cat("Progress: ",(k-kstart+0.5)/(kruns)*100,"% \n")
+    
+    #check accuracy unprocessed
+    correct=0
+    incorrect=0
+    for(i in 1:dim(dataset_test)[1])
+    {
+      if(data_pred[i]==test_class[i])
+      {
+        correct=correct + 1
+      }
+      else
+      {
+        incorrect = incorrect + 1
+      }
+    }
+    accuracy=correct/dim(dataset_test)[1]*100
+    accuracy<-unname(accuracy)  #this is only because NAMED NUM annoyed me. its not necessary
+    performance_array[k-kstart+1,2]<-accuracy
+    
+    
+    
+    #processed data
+    
+    #determine number of PCs
+    total_var=0                                         #maximum variance counter variable
+    for(i in 1:length(pca$sdev))                        #determine total variance
+    {
+      total_var<-total_var + pca_train$sdev[i]
+    }
+    
+    #accumulated variance percentage
+    acc_var=0                                           #accumulated variance
+    pc_i=0
+    #for(i in 1:length(pca$sdev))
+    while((acc_var/total_var)<(desired_percent/100))
+    {
+      pc_i<-pc_i+1
+      acc_var<-acc_var+pca_train$sdev[pc_i]
+    }
+    
+    #cut data
+    pca_train_red<- array(,dim=c(dim(pca_train$x)[1],pc_i))
+    pca_test_red<- array(,dim=c(dim(pca_test)[1],pc_i))
+    for(i in 1:pc_i)
+    {
+      pca_train_red[,i] <- pca_train$x[,i]
+      pca_test_red[,i] <- pca_test[,i]
+    }
+    
+    
+    
+    #process the data
+    p_time<-proc.time()
+    pca_pred<-knn(pca_train_red, pca_test_red,train_class,k)
+    p_time<-proc.time()-p_time
+    
+    time_array[k-kstart+1,3]=p_time[3]
+    
+    
+    
+    #check accuracy pca
+    correct=0
+    incorrect=0
+    for(i in 1:dim(dataset_test)[1])
+    {
+      if(pca_pred[i]==test_class[i])
+      {
+        correct=correct + 1
+      }
+      else
+      {
+        incorrect = incorrect + 1
+      }
+    }
+    accuracy=correct/dim(dataset_test)[1]*100
+    accuracy<-unname(accuracy)  #this is only because NAMED NUM annoyed me. its not necessary
+    performance_array[k-kstart+1,3]<-accuracy
+    
+    
+    
+  }
 }
 
-
+# time_array columns are in order: k, unprocessed knn time, pca knn time, pca adjusted with preprocessing time added
