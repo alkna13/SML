@@ -42,97 +42,110 @@ loadMultiplePersonsData <- function(dpi=300,startgrp=4,endgrp=4,location)
 
 
 
+
+
+#################################################################
+#
+# Load data into dataframes
+#
+#################################################################
+
+
+  #select which you want. load only once. takes forever
+  x= loadSinglePersonsData(300,4,0,"C:/Users/Alec/Desktop/Uni/SML/SVN/2017/group")
+  #left to right the inputs are: (dpi,start_group,end_group,file_location)
+  x_l= loadMultiplePersonsData(300,3,8,"C:/Users/Alec/Desktop/Uni/SML/SVN/2017/group")
+
+
+
+
 ########################################################
 #
 # 2.1.1
 # load data and apply pca
 #
 ########################################################
-loadData <- function()
-{
-  
-  
-  #select which you want. load only once. takes forever
-  x= loadSinglePersonsData(300,4,0,"C:/Users/Alec/Desktop/Uni/SML/SVN/2017/group")
-  #left to right the inputs are: (dpi,start_group,end_group,file_location)
-  x_l= loadMultiplePersonsData(300,3,8,"C:/Users/Alec/Desktop/Uni/SML/SVN/2017/group")
-  
-  
-  person_dependent=TRUE
-  use_multi=TRUE
-  test_split=0.9  #how large should the training set be 0.9=90/10 training/testing
-  
-  set.seed(990)
-  
 
   
-  if(use_multi)
-  {
-    if(person_dependent)
+  
+  
+  
+  #test person mixed in is person dependent
+  test_mixed=TRUE
+  use_multi=TRUE
+  test_split=0.9  #how large should the training set be 0.9=90/10 training/testing
+ 
+    set.seed(990)
+    
+  
+    
+    if(use_multi)
     {
-      dataset_shuffle <- x_l[sample(nrow(x_l)),]
+      if(test_mixed)
+      {
+        dataset_shuffle <- x_l[sample(nrow(x_l)),]
+      } else
+      {
+        dataset_shuffle <-x_l
+      }
     } else
     {
-      dataset_shuffle <-x_l
+      dataset_shuffle <- x[sample(nrow(x)),]
+      
     }
-  } else
-  {
-    dataset_shuffle <- x[sample(nrow(x)),]
-    print("no")
-  }
+    
+    
+    
+    
+    
+    
+    #create the training set
+    dataset_train<- array(, dim=c((dim(dataset_shuffle)[1]*test_split),dim(dataset_shuffle)[2]))
+    for(i in 1:dim(dataset_train)[1])
+    {
+      #kNN training set
+      dataset_train[i,]<-dataset_shuffle[i,]
+    }
+    
+    #create the testing set
+    dataset_test<- array(, dim=c(dim=c((dim(dataset_shuffle)[1]-dim(dataset_train)[1]),dim(dataset_shuffle)[2])))
+    for(i in 1:dim(dataset_test)[1])
+    {
+      #kNN testing set
+      dataset_test[i,]<-dataset_shuffle[i+(dim(dataset_shuffle)[1]*test_split),]
+    }
+    
+    #training set classification vector
+    train_class<- array(, dim=c(1,dim(dataset_train)[1]))
+    for(i in 1:dim(dataset_train)[1])
+    {
+      train_class[i]=dataset_train[i,1]
+    }
+    
+    #testing set classification vector
+    test_class<- array(, dim=c(1,dim(dataset_test)[1]))
+    for(i in 1:dim(dataset_test)[1])
+    {
+      test_class[i]=dataset_test[i,1]
+    }
+    
+    print("Beginning pca on dataset")
+    #pca<-prcomp(dataset_shuffle)
+    rm(dataset_shuffle)
+    
+    
+    pca_time<-proc.time()
+    
+    pca_train<-prcomp(dataset_train, center=FALSE)
+    
+    #pca_test<-prcomp(dataset_test)
+    pca_test<-dataset_test %*% pca_train$rotation
+    
+    pca_time<-proc.time()-pca_time
+    #time is third variable
   
   
-  
-  
-  
-  
-  #create the training set
-  dataset_train<- array(, dim=c((dim(dataset_shuffle)[1]*test_split),dim(dataset_shuffle)[2]))
-  for(i in 1:dim(dataset_train)[1])
-  {
-    #kNN training set
-    dataset_train[i,]<-dataset_shuffle[i,]
-  }
-  
-  #create the testing set
-  dataset_test<- array(, dim=c(dim=c((dim(dataset_shuffle)[1]-dim(dataset_train)[1]),dim(dataset_shuffle)[2])))
-  for(i in 1:dim(dataset_test)[1])
-  {
-    #kNN testing set
-    dataset_test[i,]<-dataset_shuffle[i+(dim(dataset_shuffle)[1]*test_split),]
-  }
-  
-  #training set classification vector
-  train_class<- array(, dim=c(1,dim(dataset_train)[1]))
-  for(i in 1:dim(dataset_train)[1])
-  {
-    train_class[i]=dataset_train[i,1]
-  }
-  
-  #testing set classification vector
-  test_class<- array(, dim=c(1,dim(dataset_test)[1]))
-  for(i in 1:dim(dataset_test)[1])
-  {
-    test_class[i]=dataset_test[i,1]
-  }
-  
-  print("Beginning pca on dataset")
-  #pca<-prcomp(dataset_shuffle)
-  rm(dataset_shuffle)
-  
-  
-  pca_time<-proc.time()
-  
-  pca_train<-prcomp(dataset_train)
-  
-  #pca_test<-prcomp(dataset_test)
-  pca_test<-dataset_test %*% pca_train$rotation
-  
-  pca_time<-proc.time()-pca_time
-  #time is third variable
-  
-  
-}
+
 
 
 
@@ -143,8 +156,6 @@ loadData <- function()
 #
 ########################################################
 
-exercise2_1_2 <- function()
-{
   #eigenvector
   #columns of...
   
@@ -160,7 +171,7 @@ exercise2_1_2 <- function()
     total_var<-total_var + pca_train$sdev[i]
     total_var_plot[i]<-total_var
   }
-  plot(1:3365,total_var_plot,main="Accumulated Variance (absolute)",xlab="PC",ylab="Acumulated Variance")
+  plot(x=1:length(total_var_plot),y=total_var_plot,main="Accumulated Variance (absolute)",xlab="PC",ylab="Acumulated Variance")
   
   
   #accumulated variance percentage
@@ -171,7 +182,7 @@ exercise2_1_2 <- function()
     acc_var<-acc_var+pca_train$sdev[i]
     acc_var_plot[i]<-acc_var/(total_var/100)
   }
-  plot(1:3365,acc_var_plot,main="Accumulated Variance (%)",xlab="PC",ylab="Acumulated Variance")
+  plot(1:length(acc_var_plot),acc_var_plot,main="Accumulated Variance (%)",xlab="PC",ylab="Acumulated Variance")
   
   
   #20 values output in array
@@ -180,7 +191,7 @@ exercise2_1_2 <- function()
   {
     acc_var_out[i]<-acc_var_plot[i*length(acc_var_out/20)]
   }
-}
+
 
 
 
@@ -190,31 +201,33 @@ exercise2_1_2 <- function()
 #
 ########################################################
 
-exercise2_1_3 <- function()
-{
+
   kstart=10
-  kruns=5
-  desired_percent=80
+  kend=100
+  kinc=5
+  desired_percent=90
+  sample_size=(kend-kstart)/kinc+1
   
-  cat(desired_percent, " percent variance  :  ", k, " different k values \n")
+  cat(desired_percent, " percent variance  :  ", (kend-kstart)/kinc+1, " different k values \n")
   
-  time_array <- array(0,dim=c(kruns,3))
-  time_array[,1]<- kstart:(kstart+kruns-1)
+  time_array <- array(0,dim=c(sample_size,3))
+  time_array[,1]<- seq(from=kstart, to=kend, by=kinc)
   
-  performance_array <- array(0,dim=c(kruns,3))
-  performance_array[,1]<- kstart:(kstart+kruns-1)
+  performance_array <- array(0,dim=c((kend-kstart)/kinc+1,3))
+  performance_array[,1]<- seq(from=kstart, to=kend, by=kinc)
   
-  for(k in kstart:(kstart+kruns-1))
+  for(k in seq(from=kstart, to=kend, by=kinc))
+    #for(k in kstart:(kstart+kruns-1))
   {
-    cat("Progress: ",(k-kstart)/(kruns)*100,"% \n")
+    cat("Progress: ",(k-kstart)/(kend-kstart+1)*100,"% \n")
     #print(k)
     t_time<-proc.time()
-    data_pred<-knn(dataset_train, dataset_test,train_class,k)
+    data_pred<-knn(dataset_train, dataset_test,train_class,k)                            #uncomment
     t_time<-proc.time()-t_time
     
-    time_array[k-kstart+1,2]<-t_time[3]
+    time_array[(k-kstart)/kinc+1,2]<-t_time[3]
     
-    cat("Progress: ",(k-kstart+0.5)/(kruns)*100,"% \n")
+    cat("Progress: ",(k-kstart+kinc/2)/(kend-kstart+1)*100,"% \n")
     
     #check accuracy unprocessed
     correct=0
@@ -232,15 +245,14 @@ exercise2_1_3 <- function()
     }
     accuracy=correct/dim(dataset_test)[1]*100
     accuracy<-unname(accuracy)  #this is only because NAMED NUM annoyed me. its not necessary
-    performance_array[k-kstart+1,2]<-accuracy
-    
-    
+    performance_array[(k-kstart)/kinc+1,2]<-accuracy
+
     
     #processed data
     
     #determine number of PCs
     total_var=0                                         #maximum variance counter variable
-    for(i in 1:length(pca$sdev))                        #determine total variance
+    for(i in 1:length(pca_train$sdev))                        #determine total variance
     {
       total_var<-total_var + pca_train$sdev[i]
     }
@@ -265,13 +277,12 @@ exercise2_1_3 <- function()
     }
     
     
-    
     #process the data
     p_time<-proc.time()
     pca_pred<-knn(pca_train_red, pca_test_red,train_class,k)
     p_time<-proc.time()-p_time
     
-    time_array[k-kstart+1,3]=p_time[3]
+    time_array[(k-kstart)/kinc+1,3]=p_time[3]
     
     
     
@@ -291,11 +302,15 @@ exercise2_1_3 <- function()
     }
     accuracy=correct/dim(dataset_test)[1]*100
     accuracy<-unname(accuracy)  #this is only because NAMED NUM annoyed me. its not necessary
-    performance_array[k-kstart+1,3]<-accuracy
+    performance_array[(k-kstart)/kinc+1,3]<-accuracy
     
     
     
   }
-}
+
+
+
+
+
 
 # time_array columns are in order: k, unprocessed knn time, pca knn time, pca adjusted with preprocessing time added
