@@ -309,8 +309,71 @@ loadMultiplePersonsData <- function(dpi=300,startgrp=4,endgrp=4,location)
   }
 
 
-
-
-
-
 # time_array columns are in order: k, unprocessed knn time, pca knn time, pca adjusted with preprocessing time added
+  
+  
+  
+  
+### Exercise 2.3 Reconstruction using PCA
+  #Rotate matrix by 90 degrees clockwise
+  rotate <- function(x) t(apply(x, 2, rev))
+  
+# 1. Draw one of each cipher
+  
+  #row iteration
+  row = 1
+  step = 400 #because each cipher is repeated 400 times
+  
+  imageSize <- sqrt(ncol(dataset_test)-1) #caculate dimensions of image
+  
+  #Plot all images from 0-9
+  for(i in 1:10){
+    imageM <- matrix(x[row,2:ncol(x)],nrow = imageSize, ncol
+                      = imageSize,byrow = FALSE)
+    imageM <- rotate(imageM) 
+    image( imageM )
+    row = row + step
+  }
+  
+  #2. Plot eigenvectors
+  for(i in 1:10){
+    
+    testEigenvector = pca_train$rotation[2:((imageSize^2)+1),i]
+    imageM <- matrix(testEigenvector,nrow = imageSize, ncol
+                     = imageSize,byrow = FALSE)
+    imageM <- rotate(imageM) 
+    image( imageM, col = grey(seq(0, 1, length = 256)))
+    }
+  #3. Plot reconstruction of original images by using all PCs
+  allCiphers = array()
+  allCiphersDrawn = FALSE
+  iteration = 0
+  while(!allCiphersDrawn){
+    iteration = iteration+1
+    trunc <- pca_train$x[iteration,1:nrow(pca_train$rotation)] %*%
+      t(pca_train$rotation[,1:nrow(pca_train$rotation)])
+    
+      currentCipher <-trunc[1,1]
+    #check if cipher is already drawn
+      alreadyDrawn = FALSE
+    for(r in 1:nrow(allCiphers)){
+      if(allCiphers[] && allCiphers[r]== currentCipher){
+        alreadyDrawn = TRUE
+        break
+      }
+    }
+    # if not drawn, add it to ciphers draw it  
+    if(!alreadyDrawn){
+      allCiphers[nrow(allCiphers)] <- currentCipher
+      
+      imageM <- matrix(trunc[,2:3365],nrow = imageSize, ncol
+                       = imageSize,byrow = FALSE)
+      #trunc <- scale(trunc, center = -1 * pca_train$center, scale=FALSE)
+      imageM <- rotate(imageM) 
+      image( imageM)
+      
+      # check if it was the last drawn cipher
+      if(allCiphers && nrow(allCiphers)== 10) allCiphersDrawn = TRUE
+    
+    }  
+  }
