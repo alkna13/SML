@@ -345,26 +345,14 @@ loadMultiplePersonsData <- function(dpi=300,startgrp=4,endgrp=4,location)
     image( imageM, col = grey(seq(0, 1, length = 256)))
     }
   #3. Plot reconstruction of original images by using all PCs
-  allCiphers = array()
-  allCiphersDrawn = FALSE
+  
   iteration = 0
-  while(!allCiphersDrawn){
+  #draw first 50 images from PCs
+  for(u in 1:50){
     iteration = iteration+1
     trunc <- pca_train$x[iteration,1:nrow(pca_train$rotation)] %*%
       t(pca_train$rotation[,1:nrow(pca_train$rotation)])
     
-      currentCipher <-trunc[1,1]
-    #check if cipher is already drawn
-      alreadyDrawn = FALSE
-    for(r in 1:nrow(allCiphers)){
-      if(allCiphers[] && allCiphers[r]== currentCipher){
-        alreadyDrawn = TRUE
-        break
-      }
-    }
-    # if not drawn, add it to ciphers draw it  
-    if(!alreadyDrawn){
-      allCiphers[nrow(allCiphers)] <- currentCipher
       
       imageM <- matrix(trunc[,2:3365],nrow = imageSize, ncol
                        = imageSize,byrow = FALSE)
@@ -372,8 +360,22 @@ loadMultiplePersonsData <- function(dpi=300,startgrp=4,endgrp=4,location)
       imageM <- rotate(imageM) 
       image( imageM)
       
-      # check if it was the last drawn cipher
-      if(allCiphers && nrow(allCiphers)== 10) allCiphersDrawn = TRUE
+      
+  }
+  
+  iteration = 0
+  #draw first 50 images from PCs
+  for(u in 1:50){
+    iteration = iteration+1
+    trunc <- pca_train$x[iteration,1:700] %*%
+      t(pca_train$rotation[,1:700])
     
-    }  
+    
+    imageM <- matrix(trunc[,2:3365],nrow = imageSize, ncol
+                     = imageSize,byrow = FALSE)
+    #trunc <- scale(trunc, center = -1 * pca_train$center, scale=FALSE)
+    imageM <- rotate(imageM) 
+    image( imageM)
+    
+    
   }
