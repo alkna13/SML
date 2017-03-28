@@ -9,73 +9,38 @@ source("A:/Machine_Learning/Basefolder/loadImage.R")
 ################################################################
 
 ####### 1. Settings and preparation of training and test dataset #######
-test_split=0.5  #how large should the training set be 0.9=90/10 training/testing
-
 
 # First load two person data
-x1 = loadSinglePersonsData(300,4,3,"A:/Machine_Learning/2017/group")
-x2 = loadSinglePersonsData(300,4,2,"A:/Machine_Learning/2017/group")
+x1 = loadSinglePersonsData(300,4,0,"A:/Machine_Learning/2017/group") #0=Alec
+x2 = loadSinglePersonsData(300,4,2,"A:/Machine_Learning/2017/group") #2=Louis
 
-#shuffle rows 
-set.seed(990)
-dataset_shuffle1 <- x1[sample(nrow(x1)),]
+
+dataset_train <- x1
+#shuffle rows for test set
 set.seed(995)
-dataset_shuffle2 <- x2[sample(nrow(x2)),]
-
-#create the training set
-dataset_train<- array(, dim=c((dim(dataset_shuffle1)[1]*test_split*2),dim(dataset_shuffle1)[2])) #*2 for 2 persons
-for(i in 1:dim(dataset_train)[1])
-{
-  #fill first part of kNN training set with person1 and then second part with person2
-  if(i < dim(dataset_train)[1]/2){
-    dataset_train[i,]<-dataset_shuffle1[i,]
-  }else{
-    dataset_train[i,]<-dataset_shuffle2[i/2,]
-  }
-}
-
-#create the testing set
-dataset_test<- array(, dim=c(dim=c((dim(dataset_shuffle1)[1]*2 - dim(dataset_train)[1]),dim(dataset_shuffle1)[2])))
-
-for(i in 1:dim(dataset_test)[1])
-{
-  #fill first part of kNN test set with person1 and then second part with person2
-  if(i < dim(dataset_test)[1]/2){
-    dataset_test[i,]<-dataset_shuffle1[i+(dim(dataset_shuffle1)[1]*test_split),]
-  }else{
-    dataset_test[i,]<-dataset_shuffle2[i/2+(dim(dataset_shuffle2)[1]*test_split),]
-  }
-}
-
-# remove shuffled datasets
-rm(dataset_shuffle1)
-rm(dataset_shuffle2)
-
-#training set classification vector (first column)
-train_class<- array(, dim=c(1,dim(dataset_train)[1]))
-for(i in 1:dim(dataset_train)[1])
-{
-  train_class[i]=dataset_train[i,1]
-}
-
-#testing set classification vector (first column)
-test_class<- array(, dim=c(1,dim(dataset_test)[1]))
-for(i in 1:dim(dataset_test)[1])
-{
-  test_class[i]=dataset_test[i,1]
-}
+dataset_test <- x2[sample(nrow(x2)),]
 
 ####### 2. Perform k-means clustering on training data #######
+#amount of values for each cluster
+clusterSize = 200
 
 cipher_cluster <- c()
 label_cluster <- c()
 
 #for each cipher, define clusters
 for( i in 0:9) {
-  clusterData <- kmeans(dataset_train[ dataset_train[1:4000,1] == i, ], 200)
+  #training data for cipher i (remove class-identifier in first col)
+  train_data_i <- dataset_train[dataset_train[,1] == i, -1]
+  #calculate kmeans with clusterSize clusters
+  clusterData <- kmeans(train_data_i, clusterSize)
+  
+  #add center and label of the ith cipher to array
   cipher_cluster[[i + 1]] <- clusterData$centers
-  label_cluster[[i + 1]] <- c(1:200)*0 + i
+  label_cluster[[i + 1]] <- c(1:clusterSize)*0 + i
 }
+rm(train_data_i)
+
+#get training-label and data for knn-algorithm out of clustered data
 train_lab <- factor(unlist(label_cluster))
 train_dat <- cipher_cluster[[1]]
 for( i in 2:10) {
@@ -83,27 +48,51 @@ for( i in 2:10) {
 }
 
 
-####### 3. Perform knn on clustered training data #######
+################### TEST PLOTTING #######################################
+
+# plot(clusterData, col = clusterData$cluster)
+# points(clusterData$centers, col = 1:200, pch = 8, cex = 2)
+# 
+# 
+# plot(clusterData$centers,main="Cluster means", xlab="Cluster Mean",ylab="")
+# #function for rotating matrix by 90 degrees clockwise
+# rotate <- function(x) t(apply(x, 2, rev))
+# 
+# #row to plot to image
+# row = 1400
+# imageSize <- sqrt(ncol(train_dat)) #caculate dimensions of image
+# imageM <- matrix(train_dat[row, ], nrow = imageSize,ncol= imageSize, byrow = FALSE)
+# #imageM <- rotate(imageM)
+# title <- paste("Cipher ", train_lab[row], " at index ",row )
+# imageM <- rotate(imageM)
+# image(imageM, main = title)
+
+
+################### PLOTTING END #######################################
+
+
+####### 3. Perform knn on clustered training data  #######
 kstart=1
-kend=80
-kinc=1
+kend=81
+kinc=5
 sample_size=(kend-kstart)/kinc+1
 
 cat(" variance  :  ", (kend-kstart)/kinc+1, " different k values \n")
 
-time_array <- array(0,dim=c(sample_size,3))
+time_array <- array(0,dim=c(sample_size,2))
 time_array[,1]<- seq(from=kstart, to=kend, by=kinc)
+colnames(time_array ) <- c("k","time [sec]")
 
-performance_array <- array(0,dim=c((kend-kstart)/kinc+1,3))
+performance_array <- array(0,dim=c((kend-kstart)/kinc+1,2))
 performance_array[,1]<- seq(from=kstart, to=kend, by=kinc)
-
+colnames(performance_array) <- c("k","Accuracy")
 for(k in seq(from=kstart, to=kend, by=kinc))
   #for(k in kstart:(kstart+kruns-1))
 {
   cat("Progress: ",(k-kstart)/(kend-kstart+1)*100,"% \n")
   #print(k)
   t_time<-proc.time()
-  data_pred<-knn(train_dat, dataset_test,train_lab,k)
+  data_pred<-knn(train_dat, dataset_test[,2:3365],train_lab,k)
   t_time<-proc.time()-t_time
   
   time_array[(k-kstart)/kinc+1,2]<-t_time[3]
@@ -115,7 +104,7 @@ for(k in seq(from=kstart, to=kend, by=kinc))
   incorrect=0
   for(i in 1:dim(dataset_test)[1])
   {
-    if(data_pred[i]==test_class[i])
+    if(data_pred[i]==dataset_test[i,1])
     {
       correct=correct + 1
     }
@@ -130,11 +119,9 @@ for(k in seq(from=kstart, to=kend, by=kinc))
   
 }
 
-#plot accuracy
+#plot accuracy and time
 plot(performance_array,main="Accuracy", xlab="k",ylab="Accuracy[%]")
 plot(time_array,main="Time", xlab="k",ylab="time [sec]")
-
-
 
 ################################################################
 #
