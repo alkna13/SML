@@ -51,7 +51,7 @@ loadMultiplePersonsData <-
 
 
 #select which you want. load only once. takes forever
-x = loadSinglePersonsData(300, 4, 3, "A:/Machine_Learning/2017/group")
+#x = loadSinglePersonsData(300, 4, 3, "A:/Machine_Learning/2017/group")
 #left to right the inputs are: (dpi,start_group,end_group,file_location)
 x_l = loadMultiplePersonsData(300, 4, 4, "A:/Machine_Learning/2017/group")#loading group 3-8 takes ca. 30 min
 
@@ -118,10 +118,9 @@ rm(dataset_shuffle)
 
 pca_time <- proc.time()
 
-pca_train <- prcomp(dataset_train)
-
-pca_test <- prcomp(dataset_test)
-#pca_test<-dataset_test %*% pca_train$rotation
+pca_train <- prcomp(dataset_train) 
+#rotate test set the same way as the training set was rotated by PCA
+pca_test<-dataset_test %*% pca_train$rotation
 
 pca_time <- proc.time() - pca_time
 #time is third variable
@@ -179,3 +178,11 @@ for (i in 1:20)
 # 5 graphs, one for each component, and the highest information gain
 #
 ########################################################
+# Extract the first 5 PCAs for each cipher-image
+rows = dim(dataset_train)[1]
+firstFivePCAs <- array(0, dim = c(rows,5))
+for (cipherIndex in 1:rows)
+{
+    firstFivePCAs[cipherIndex,1:5] <- as.numeric(pca_train$x[cipherIndex,(1:5)])
+}
+colnames(firstFivePCAs)<- c("PCA1","PCA2","PCA3","PCA4","PCA5")
