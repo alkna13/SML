@@ -1,4 +1,6 @@
 source("A:/Machine_Learning/Basefolder/loadImage.R")
+library(rpart)
+library(rpart.plot)
 
 ################################################################
 #
@@ -178,11 +180,53 @@ for (i in 1:20)
 # 5 graphs, one for each component, and the highest information gain
 #
 ########################################################
-# Extract the first 5 PCAs for each cipher-image
+### 0. Extract the first 5 PCAs for each cipher-image
 rows = dim(dataset_train)[1]
-firstFivePCAs <- array(0, dim = c(rows,5))
+firstFivePCAs <- array(0, dim = c(rows,6))
 for (cipherIndex in 1:rows)
 {
     firstFivePCAs[cipherIndex,1:5] <- as.numeric(pca_train$x[cipherIndex,(1:5)])
 }
-colnames(firstFivePCAs)<- c("PCA1","PCA2","PCA3","PCA4","PCA5")
+colnames(firstFivePCAs)<- c("PCA1","PCA2","PCA3","PCA4","PCA5","class")
+#append class(cipher) to table
+firstFivePCAs[,6] <- train_class 
+
+
+### 1. calculate entropy before split
+totalAmountOfCiphers = dim(firstFivePCAs)[1]
+
+#calculate initial root entropy (value must be between 0 - log2(10)=3.322)
+entropy = 0 
+for(c in 0:9){
+  # SUm of all values with this class(cipher) and this value
+  sumThisCipher = sum(firstFivePCAs[,6] == c) 
+  
+  #calculate probability
+  p <- sumThisCipher/totalAmountOfCiphers
+  
+  #set 0 if no occurence (log would give -inf)
+  if(p!=0) temp = (p*log2(p))
+  else temp = 0
+  
+  entropy = entropy + temp*-1
+}
+
+
+
+### 3. Beginn with Recursive Binary Splitting to calculate decision point using rpart (where to split?)
+#TODO: Compute decision point for PCAs and associated information gain
+
+
+########################################################
+#
+# 4.1.2 Compute and plot decision tree
+#
+########################################################
+dataPCA <- as.data.frame(firstFivePCAs)
+tree <- rpart(class ~ ., data = dataPCA, method = "class")
+#plot tree
+rpart.plot(tree, extra=1+100, nn=TRUE)
+
+### 4. Calculate Entropies and Information gain
+
+
