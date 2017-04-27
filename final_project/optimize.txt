@@ -1,0 +1,9 @@
+KNN optimization:
+blurring
+	gaussian(vary sigma)
+	mean
+	none
+PCA- optimal %variance
+minimum votes- number or %
+k
+dpi
