@@ -43,6 +43,33 @@ loadMultiplePersonsData <-
     return(x)
   }
 
+calcEntropy <- function(data){
+  
+  if(is.na(data)[1]) return(log(10))
+  ### 1. calculate entropy before split
+
+  totalAmountOfCiphers = dim(data)[1]
+  
+  #calculate initial root entropy (value must be between 0 - log2(10)=3.322)
+  entropy = 0
+  
+  for(c in 0:9){
+    # SUm of all values with this class(cipher) and this value
+
+    sumThisCipher = sum(data[,6] == c) 
+
+    #calculate probability
+    p <- sumThisCipher/totalAmountOfCiphers
+  
+    #set 0 if no occurence (log would give -inf)
+    if(p!=0) temp = (p*log2(p))*-1
+    else temp = 0
+  
+    entropy = entropy + temp
+  }
+  return(entropy)
+}
+
 ########################################################
 #
 # 0. Prerequisites:
@@ -191,30 +218,61 @@ colnames(firstFivePCAs)<- c("PCA1","PCA2","PCA3","PCA4","PCA5","class")
 #append class(cipher) to table
 firstFivePCAs[,6] <- train_class 
 
-
-### 1. calculate entropy before split
-totalAmountOfCiphers = dim(firstFivePCAs)[1]
-
-#calculate initial root entropy (value must be between 0 - log2(10)=3.322)
-entropy = 0 
-for(c in 0:9){
-  # SUm of all values with this class(cipher) and this value
-  sumThisCipher = sum(firstFivePCAs[,6] == c) 
+### 1. Beginn with Recursive Binary Splitting to calculate decision point(where to split first root?)
+#Define root, calculate entropy (entropy before) and intialize array for all iterations
+root = firstFivePCAs
+entropyBefore = calcEntropy(root)
+rows= dim(root)[1]
+iterations <-array()
+#for each PCA, calculate 10 thresholds between min and max value
+for(i in 1:5){
+  min = min(root[,i])
+  max = max(root[,i])
+  range = max-min
+  inc = range/10
+  threshold = min + inc
   
-  #calculate probability
-  p <- sumThisCipher/totalAmountOfCiphers
-  
-  #set 0 if no occurence (log would give -inf)
-  if(p!=0) temp = (p*log2(p))
-  else temp = 0
-  
-  entropy = entropy + temp*-1
+  #calculate information gain for each threshold value (added inc/2 or else last threshold will be bigger as max)
+  while(threshold <= (max+inc/2)){
+    leftArray <- array()
+    rightArray <- array()
+    
+    for(row in 1:rows){
+      
+      if(root[row,i] < threshold){
+        leftArray = rbind.data.frame(leftArray,root[row,])
+      } 
+      else{
+        rightArray = rbind.data.frame(rightArray,root[row,])
+      }
+    }
+    #remove first (NA) row of each array, if there is more than one entry
+    if(dim(leftArray)[1]>1) leftArray = leftArray[-1,]
+    if(dim(rightArray)[1]>1) rightArray = rightArray[-1,]
+    #calculate entropies and information gain
+    entropyLeftAfter = calcEntropy(leftArray)
+    entropyRightAfter = calcEntropy(rightArray)
+    entropyAfter = (dim(leftArray)[1]/rows*entropyLeftAfter) +  (dim(rightArray)[1]/rows*entropyRightAfter)
+    infoGain = entropyBefore - entropyAfter
+    
+    #save each iteration with PCA#, threshold, entropies and information gain
+    iteration=c(i,threshold,entropyLeftAfter,entropyRightAfter,entropyAfter, infoGain)
+    iterations <- rbind(iterations,iteration)
+    #increase threshold by inc value
+    threshold = threshold + inc
+    
+  }
+  #remove first rows(NA) of array after the first iteration
+  if(i==1)iterations=iterations[-1,]
+  #plot the information gain for each threshold of this PCA#
+  x<- iterations[(((i-1)*10)+1):(10*i),2]
+  y<- iterations[(((i-1)*10)+1):(10*i),6]
+  plot(x,y, main=paste("PCA ",i),sub="Data=Group4 (3 Person, 50/50 split, person dependent)", 
+       xlab = paste("Threshold"), ylab="Information Gain")
 }
+#give the iterations table column names
+colnames(iterations) <- c("PCA#","Threshold","entropyLeft","entropyRight","entropyTotal","informationGain")
 
-
-
-### 3. Beginn with Recursive Binary Splitting to calculate decision point using rpart (where to split?)
-#TODO: Compute decision point for PCAs and associated information gain
 
 
 ########################################################
