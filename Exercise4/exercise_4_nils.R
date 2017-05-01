@@ -1,7 +1,6 @@
 source("A:/Machine_Learning/Basefolder/loadImage.R")
 library(rpart)
 library(rpart.plot)
-library(rattle) # ATTENTION: for this library, you need to install gtk+ first --> install.packages("RGtk2", depen=T, type="source")
 
 ################################################################
 #
