@@ -1,6 +1,7 @@
 source("A:/Machine_Learning/Basefolder/loadImage.R")
 library(rpart)
 library(rpart.plot)
+library(rattle) # ATTENTION: for this library, you need to install gtk+ first --> install.packages("RGtk2", depen=T, type="source")
 
 ################################################################
 #
@@ -77,129 +78,18 @@ calcEntropy <- function(data){
 #
 ########################################################
 
-
-
 #select which you want. load only once. takes forever
 #x = loadSinglePersonsData(300, 4, 3, "A:/Machine_Learning/2017/group")
 #left to right the inputs are: (dpi,start_group,end_group,file_location)
 x_l = loadMultiplePersonsData(300, 4, 4, "A:/Machine_Learning/2017/group")#loading group 3-8 takes ca. 30 min
 
-person_dependent = TRUE
-use_multi = TRUE
-test_split = 0.5  #how large should the training set be 0.9=90/10 training/testing
-
+#shuffle data
 set.seed(990)
+dataset_shuffle <- x_l[sample(nrow(x_l)),]
 
-if (use_multi)
-{
-  if (person_dependent)
-  {
-    dataset_shuffle <- x_l[sample(nrow(x_l)), ]
-  } else
-  {
-    dataset_shuffle <- x_l
-  }
-} else
-{
-  dataset_shuffle <- x[sample(nrow(x)), ]
-  print("no use_multi ")
-}
-
-#create the training set
-dataset_train <-
-  array(, dim = c((dim(dataset_shuffle)[1] * test_split), dim(dataset_shuffle)[2]))
-for (i in 1:dim(dataset_train)[1])
-{
-  #training set
-  dataset_train[i, ] <- dataset_shuffle[i, ]
-}
-
-#create the testing set
-dataset_test <-
-  array(, dim = c(dim = c((
-    dim(dataset_shuffle)[1] - dim(dataset_train)[1]
-  ), dim(dataset_shuffle)[2])))
-for (i in 1:dim(dataset_test)[1])
-{
-  #kNN testing set
-  dataset_test[i, ] <-
-    dataset_shuffle[i + (dim(dataset_shuffle)[1] * test_split), ]
-}
-
-#training set classification vector
-train_class <- array(, dim = c(1, dim(dataset_train)[1]))
-for (i in 1:dim(dataset_train)[1])
-{
-  train_class[i] = dataset_train[i, 1]
-}
-
-#testing set classification vector
-test_class <- array(, dim = c(1, dim(dataset_test)[1]))
-for (i in 1:dim(dataset_test)[1])
-{
-  test_class[i] = dataset_test[i, 1]
-}
-
-print("Beginning pca on dataset")
-#pca <- prcomp(dataset_shuffle)
-rm(dataset_shuffle)
-
-
-pca_time <- proc.time()
-
-pca_train <- prcomp(dataset_train) 
-#rotate test set the same way as the training set was rotated by PCA
-pca_test<-dataset_test %*% pca_train$rotation
-
-pca_time <- proc.time() - pca_time
-#time is third variable
-
-#Plot and resume results
-
-#variance
-plot(pca_train$sdev,
-     main = "Variance by PCA",
-     xlab = "PCA",
-     ylab = "Variance")
-
-#accumulated variance absolute
-total_var = 0                                         #maximum variance counter variable
-total_var_plot = array(, dim = c(1, length(pca_train$sdev)))    #array tracking accumulated total variance(absolute)
-for (i in 1:length(pca_train$sdev))
-{
-  total_var <- total_var + pca_train$sdev[i]
-  total_var_plot[i] <- total_var
-}
-plot(
-  1:3365,
-  total_var_plot,
-  main = "Accumulated Variance (absolute)",
-  xlab = "PC",
-  ylab = "Acumulated Variance"
-)
-
-
-#accumulated variance percentage
-acc_var = 0                                           #accumulated variance
-acc_var_plot = array(, dim = c(1, length(pca_train$sdev)))      #array tracking accumulated variance(%)
-for (i in 1:length(pca_train$sdev))
-{
-  acc_var <- acc_var + pca_train$sdev[i]
-  acc_var_plot[i] <- acc_var / (total_var / 100)
-}
-plot(1:3365,
-     acc_var_plot,
-     main = "Accumulated Variance (%)",
-     xlab = "PC",
-     ylab = "Acumulated Variance")
-
-
-#20 values output in array
-acc_var_out <- array(0, dim = c(20))
-for (i in 1:20)
-{
-  acc_var_out[i] <- acc_var_plot[i * length(acc_var_out / 20)]
-}
+print("Beginning pca on dataset") 
+#leave out first column --> class identifier
+pca <- prcomp(dataset_shuffle[,2:dim(dataset_shuffle)[2]])
 
 ########################################################
 #
@@ -208,15 +98,15 @@ for (i in 1:20)
 #
 ########################################################
 ### 0. Extract the first 5 PCAs for each cipher-image
-rows = dim(dataset_train)[1]
+rows = dim(dataset_shuffle)[1]
 firstFivePCAs <- array(0, dim = c(rows,6))
 for (cipherIndex in 1:rows)
 {
-    firstFivePCAs[cipherIndex,1:5] <- as.numeric(pca_train$x[cipherIndex,(1:5)])
+    firstFivePCAs[cipherIndex,1:5] <- as.numeric(pca$x[cipherIndex,(1:5)])
 }
 colnames(firstFivePCAs)<- c("PCA1","PCA2","PCA3","PCA4","PCA5","class")
 #append class(cipher) to table
-firstFivePCAs[,6] <- train_class 
+firstFivePCAs[,6] <- dataset_shuffle[,1] 
 
 ### 1. Beginn with Recursive Binary Splitting to calculate decision point(where to split first root?)
 #Define root, calculate entropy (entropy before) and intialize array for all iterations
@@ -267,9 +157,10 @@ for(i in 1:5){
   #plot the information gain for each threshold of this PCA#
   x<- iterations[(((i-1)*10)+1):(10*i),2]
   y<- iterations[(((i-1)*10)+1):(10*i),6]
-  plot(x,y, main=paste("PCA ",i),sub="Data=Group4 (3 Person, 50/50 split, person dependent)", 
+  plot(x,y, main=paste("PCA ",i),sub="Data=Group4 (3 Person, whole data)", 
        xlab = paste("Threshold"), ylab="Information Gain")
 }
+
 #give the iterations table column names
 colnames(iterations) <- c("PCA#","Threshold","entropyLeft","entropyRight","entropyTotal","informationGain")
 
@@ -281,10 +172,18 @@ colnames(iterations) <- c("PCA#","Threshold","entropyLeft","entropyRight","entro
 #
 ########################################################
 dataPCA <- as.data.frame(firstFivePCAs)
-tree <- rpart(class ~ ., data = dataPCA, method = "class")
+tree <- rpart(class ~ ., data = dataPCA, method = "class", control=rpart.control(cp=0.005))
 #plot tree
 rpart.plot(tree, extra=1+100, nn=TRUE)
 
-### 4. Calculate Entropies and Information gain
+
+########################################################
+#
+# 4.1.3 Cross validation
+#
+########################################################
+### Show the cp values and errors for each decision and plot it
+printcp(tree)
+plotcp(tree)
 
 
