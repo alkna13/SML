@@ -87,22 +87,7 @@ test_split = 0.5 #how large should the training set be 0.9=90/10 training/testin
 #shuffle data
 set.seed(990)
 dataset_shuffle <- x_l[sample(nrow(x_l)),]
-
-#create the training set
-dataset_train<- array(, dim=c((dim(dataset_shuffle)[1]*test_split),dim(dataset_shuffle)[2]))
-for(i in 1:dim(dataset_train)[1])
-{
-  #training set
-  dataset_train[i,]<-dataset_shuffle[i,]
-}
-
-#create the testing set
-dataset_test<- array(, dim=c(dim=c((dim(dataset_shuffle)[1]-dim(dataset_train)[1]),dim(dataset_shuffle)[2])))
-for(i in 1:dim(dataset_test)[1])
-{
-  #testing set
-  dataset_test[i,]<-dataset_shuffle[i+(dim(dataset_shuffle)[1]*test_split),]
-}
+#will be split further below
 
 
 ########################################################
@@ -113,10 +98,16 @@ for(i in 1:dim(dataset_test)[1])
 # 
 ########################################################
 
-trainingClass <- formatClassLabels(dataset_train)
+dataset_decoded_targets <- formatClassLabels(dataset_shuffle)
 
-#remove the classifier from training set
-dataset_train_values = dataset_train[,2:dim(dataset_train)[2]]
+#remove the classifier from dataset
+dataset_values = dataset_shuffle[,2:dim(dataset_shuffle)[2]]
+#remove unnecessary shuffled dataset
+rm(dataset_shuffle)
+#Split training and testset with splitting function of RSNNS
+dataset_mlp <- splitForTrainingAndTest(dataset_values, dataset_decoded_targets, ratio=test_split)
+#Normalize data
+dataset_mlp <- normTrainingAndTestSet(dataset_mlp, type="0_1")
 
 ########################################################
 #
@@ -125,7 +116,7 @@ dataset_train_values = dataset_train[,2:dim(dataset_train)[2]]
 ########################################################
 #train model with training values, targets to values, size of units, 
 #the params for the learning functions and the maximum iterations
-nnModel <- mlp(dataset_train_values, trainingClass, size=c(20,20,20), learnFuncParams = 0.1, maxit = 100 )
+nnModel <- mlp(dataset_mlp$inputsTrain, dataset_mlp$targetsTrain, size=c(20,20,20), learnFuncParams = 0.1, maxit = 100 )
 print(nnModel)
 
 ########################################################
@@ -133,23 +124,41 @@ print(nnModel)
 # 5.1.3 Evaluate neuronal network with test data
 #  
 ########################################################
-#format the outputs for test data
-testClass <- formatClassLabels(dataset_test)
-
-#remove the classifier from test set
-dataset_test_values = dataset_test[,2:dim(dataset_test)[2]]
 
 #Evaluate the model with test data
-nnModel <- mlp(dataset_train_values, trainingClass, size=c(20,20,20), learnFuncParams = 0.1, maxit = 100, 
-               inputsTest = dataset_test_values, targetsTest = testClass)
-predictions <-  predict(nnModel, dataset_test_values)
+nnModel <- mlp(dataset_mlp$inputsTrain, dataset_mlp$targetsTrain, size=c(20,20,20), learnFuncParams = 0.1, maxit = 100, 
+               inputsTest = dataset_mlp$inputsTest, targetsTest = dataset_mlp$targetsTest)
+predictions <-  predict(nnModel, dataset_mlp$inputsTest)
 
 print(nnModel)
 
-#Plot some graphs
-plotIterativeError(nnModel)# training is black line, test is red line
-plotRegressionError(predictions[,2], testClass[,2], pch = 3) 
-plotROC(fitted.values(nnModel)[,2], trainingClass[,2]) 
-plotROC(predictions[,2], testClass[,2])
+#Plot some graphs --> interpretation help: http://beyondvalence.blogspot.dk/2014/03/neural-network-prediction-of.html or https://www.google.dk/url?sa=t&rct=j&q=&esrc=s&source=web&cd=2&ved=0ahUKEwinvMbYrd7TAhWFlCwKHYHXDR4QFgg0MAE&url=https%3A%2F%2Fwww.jstatsoft.org%2Farticle%2Fview%2Fv046i07%2Fv46i07.pdf&usg=AFQjCNHVRgzP389c8ReCHPmS9bd_qYm0Ow&sig2=zUdvGi8oo6CnlgoctJrYqw&cad=rja
+plotIterativeError(nnModel, main="Iterative Error")# training is black line, test is red line
+legend("topright", c("training data", "test data"), col=c("black","red"), lwd=c(1,1))
+
+plotRegressionError(predictions[,2], dataset_mlp$targetsTest[,2], main="Regression Error")
+legend("bottomright", c("optimal", "linear fit"), col=c("black","red"), lwd=c(1,1))
+
+plotROC(fitted.values(nnModel)[,2], dataset_mlp$targetsTrain[,2]) 
+plotROC(predictions[,2], dataset_mlp$targetsTest[,2])
 
 
+
+########################################################
+#
+# 5.1.4 Experiment with various parameters
+#  
+########################################################
+
+##a) Hidden Structure
+#a1) Layers and nodes
+#Layers:
+# ?
+#Nodes:
+#TODO: CHanging size value
+
+
+#a2) Internal Learning parameters (Learning rate and maximum output difference)
+# Learning rate
+
+#Maximum output difference
