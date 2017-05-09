@@ -107,7 +107,7 @@ dataset_values = dataset_shuffle[,2:dim(dataset_shuffle)[2]]
 #remove unnecessary shuffled dataset
 rm(dataset_shuffle)
 #Split training and testset with splitting function of RSNNS
-dataset_mlp <- splitForTrainingAndTest(dataset_values, dataset_decoded_targets, ratio=0.2) #ratio of 0.2 would mean 20% test set & 80% training
+dataset_mlp <- splitForTrainingAndTest(dataset_values, dataset_decoded_targets, ratio=0.5) #ratio of 0.2 would mean 20% test set & 80% training
 #Normalize data
 dataset_mlp <- normTrainingAndTestSet(dataset_mlp, type="0_1")
 
@@ -130,9 +130,9 @@ print(nnModel)
 ########################################################
 #Evaluate the model with test data
 start.time <-proc.time()
-nnModel <- mlp(dataset_mlp$inputsTrain, dataset_mlp$targetsTrain, size=c(20,20,20), learnFuncParams = c(0.1), maxit = 500, 
+nnModel <- mlp(dataset_mlp$inputsTrain, dataset_mlp$targetsTrain, size=10, learnFuncParams = c(0.4), maxit = 100, 
                inputsTest = dataset_mlp$inputsTest, targetsTest = dataset_mlp$targetsTest)
-proc.time() - start.time ##result will be time for training AND test. Subtract elapsed training time from before for test time
+mlp_time <- proc.time() - start.time ##result will be time for training AND test. Subtract elapsed training time from before for test time
 
 ###### Starting Evaluations
 ## 1. Get targets and fitted values for calculating mean
@@ -150,7 +150,8 @@ meanTest <- mean(dataset_class_test == nnModel_class_test)
 meanTest
 meanTrain <- mean(dataset_class_train == nnModel_class_train)
 meanTrain
-
+text <- paste("Time: ",mlp_time[3],  " | Acc Test: ",meanTest," | Acc Train", meanTrain)
+write(text,file="plots/accuracys_time.txt")
 ## 2. Confusion matrix with fitted values vs targets
 # First bring them to the same length (if some numbers never occured in prediction)
 #test set
@@ -159,7 +160,7 @@ u <- sort.int(u)
 t = table(factor(nnModel_class_test, u), factor(dataset_class_test, u))
 test.con <- confusionMatrix(t)
 test.con
-
+write.csv2(test.con$table,file = "plots/confMatrix_testData.csv")
 #train set
 
 u = union(nnModel_class_train, dataset_class_train)
@@ -167,11 +168,15 @@ u <- sort.int(u)
 t = table(factor(nnModel_class_train, u), factor(dataset_class_train, u))
 train.con <- confusionMatrix(t)
 train.con
+write.csv2(train.con$table,file = "plots/confMatrix_trainData.csv")
 
 ## Plot some graphs --> interpretation help: http://beyondvalence.blogspot.dk/2014/03/neural-network-prediction-of.html or https://www.google.dk/url?sa=t&rct=j&q=&esrc=s&source=web&cd=2&ved=0ahUKEwinvMbYrd7TAhWFlCwKHYHXDR4QFgg0MAE&url=https%3A%2F%2Fwww.jstatsoft.org%2Farticle%2Fview%2Fv046i07%2Fv46i07.pdf&usg=AFQjCNHVRgzP389c8ReCHPmS9bd_qYm0Ow&sig2=zUdvGi8oo6CnlgoctJrYqw&cad=rja
 ## 3. Iterative Error graph
 plotIterativeError(nnModel, main="Iterative Error")# training is black line, test is red line
 legend("topright", c("training data", "test data"), col=c("black","red"), lwd=c(1,1))
+#saving image
+dev.copy(png,filename="plots/iterativeError.png");
+dev.off ();
 
 ## 4. Plot Regression error and ROC for each cipher 
 for(i in 1:10){
@@ -179,13 +184,23 @@ for(i in 1:10){
   #Regression error
   plotRegressionError(dataset_mlp$targetsTest[,i], nnModel$fittedTestValues[,i], main="Regression Error", sub=paste("Cipher: ",i-1))
   legend("bottomright", c("optimal", "linear fit"), col=c("black","red"), lwd=c(1,1))
+  #saving image
+  dev.copy(png,filename=paste("plots/regressionError_",i-1,".png"));
+  dev.off ();
   
   #receiver Operating Characteristics (ROC) for each cipher
   
   #train set
   plotROC(nnModel$fitted.values[,i],dataset_mlp$targetsTrain[,i], main="ROC curve, training set", sub=paste("Cipher: ",i-1)) 
+  #saving image
+  dev.copy(png,filename=paste("plots/ROC_train_",i-1,".png"));
+  dev.off ();
+  
   #test set
   plotROC(nnModel$fittedTestValues[,i],dataset_mlp$targetsTest[,i], main="ROC curve, test set", sub=paste("Cipher: ",i-1))
+  #saving image
+  dev.copy(png,filename=paste("plots/ROC_test_",i-1,".png"));
+  dev.off ();
 }
 
 
