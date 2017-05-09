@@ -130,7 +130,7 @@ print(nnModel)
 ########################################################
 #Evaluate the model with test data
 start.time <-proc.time()
-nnModel <- mlp(dataset_mlp$inputsTrain, dataset_mlp$targetsTrain, size=10, learnFuncParams = c(0.4), maxit = 100, 
+nnModel <- mlp(dataset_mlp$inputsTrain, dataset_mlp$targetsTrain, size=10, learnFuncParams = c(0.1,0.2), maxit = 100, 
                inputsTest = dataset_mlp$inputsTest, targetsTest = dataset_mlp$targetsTest)
 mlp_time <- proc.time() - start.time ##result will be time for training AND test. Subtract elapsed training time from before for test time
 
