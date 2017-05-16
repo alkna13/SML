@@ -20,7 +20,7 @@ library("caret")
 
 
 #-------------------------------------------------------------
-#Smoothing function (you are welcome to use alternative functions from R)
+#Low pass smoothing function (standard)
 #-------------------------------------------------------------
 smoothImage <- function(grayImg){
   #two ways of specifying kernel:
@@ -42,42 +42,54 @@ smoothImage <- function(grayImg){
   #using r library for smoothing
   smoothed <- filter2(grayImg, kernel)
   
-  #simple implementation of average filter:
-  # imgWidth <- length(gray[1,])
-  # imgHeight <- length(gray[,1])
-  # kernelSize <- 1
-  # for(px in 1:imgWidth)
-  # {
-  #   for(py in 1:imgHeight)
-  #   {
-  #     baseX <- px - kernelSize
-  #     endX <- px + kernelSize
-  #     if(baseX < 1){baseX<-1}
-  #     if(endX > imgWidth){endX<-imgWidth}
-  #     
-  #     baseY <- py - kernelSize
-  #     endY <- py + kernelSize
-  #     if(baseY < 1){baseY<-1}
-  #     if(endY > imgHeight){endY<-imgHeight}
-  #     
-  #     
-  #     value <- 0
-  #     for(pkx in baseX:endX)
-  #     {
-  #       for(pky in baseY:endY)
-  #       {
-  #         value <- value+gray[pky,pkx]
-  #       }
-  #     }
-  #     kernelValues <- (endY-baseY+1)*(endX-baseX+1)    
-  #     value <- value/kernelValues
-  #     
-  #     smoothed[py,px] <- value
-  #   }
-  # }
+  
   return(smoothed)
 }
 
+# Average smoothing (simple implementation)
+smoothAverageImage <- function(gray){
+  
+  imgWidth <- length(gray[1,])
+  imgHeight <- length(gray[,1])
+  kernelSize <- 1
+  for(px in 1:imgWidth)
+  {
+    for(py in 1:imgHeight)
+    {
+      baseX <- px - kernelSize
+      endX <- px + kernelSize
+      if(baseX < 1){baseX<-1}
+      if(endX > imgWidth){endX<-imgWidth}
+      
+      baseY <- py - kernelSize
+      endY <- py + kernelSize
+      if(baseY < 1){baseY<-1}
+      if(endY > imgHeight){endY<-imgHeight}
+      
+      
+      value <- 0
+      for(pkx in baseX:endX)
+      {
+        for(pky in baseY:endY)
+        {
+          value <- value+gray[pky,pkx]
+        }
+      }
+      kernelValues <- (endY-baseY+1)*(endX-baseX+1)
+      value <- value/kernelValues
+      
+      smoothed[py,px] <- value
+    }
+  }
+  return(smoothed)
+}
+
+# Gaussian smoothing (EBImage lib)
+gaussianBlur <- function(image, sigma){
+  bluredImg = gblur(image, sigma)
+  return(bluredImg)
+  
+}
 
 #-------------------------------------------------------------
 #Data loading function.
@@ -91,10 +103,12 @@ smoothImage <- function(grayImg){
 #a single type of digit, so the first table is only 0's, the second is 1's and so on.
 #In the tables the rows represent the individual handwritten digits.
 #The columns represents the pixel values.
+#ADDED last parameter smoothingFunc. Possible values: "none","gaussian", "lowpass", "average"
+#If smmoothFunc="gaussian" then gaussSigma must be a number
 #-------------------------------------------------------------
-loadSinglePersonsData <- function(DPI,groupNr,groupMemberNr,folder){
+loadSinglePersonsData <- function(DPI,groupNr,groupMemberNr,folder,smoothFunc,gaussSigma){
   #load the scaned images
-
+  
   ciffers <- list(readPNG(paste(c(folder,groupNr,"/member",groupMemberNr,"/Ciphers",DPI,"-0.png"), collapse = "")),
                   readPNG(paste(c(folder,groupNr,"/member",groupMemberNr,"/Ciphers",DPI,"-1.png"), collapse = "")),
                   readPNG(paste(c(folder,groupNr,"/member",groupMemberNr,"/Ciphers",DPI,"-2.png"), collapse = "")),
@@ -109,7 +123,7 @@ loadSinglePersonsData <- function(DPI,groupNr,groupMemberNr,folder){
   #  gray <- list(1:5)
   #   smoothed <- list(1:5)
   prepared <- list(1:5)
-
+  
   #convert the images to gray scale.
   for(i in 1:5)
   {
@@ -122,12 +136,18 @@ loadSinglePersonsData <- function(DPI,groupNr,groupMemberNr,folder){
       prepared[[i]] <- ciffers[[i]]
     }  
   }
-  
+
   #smooth images based on the funtion in the top
   for(i in 1:5)
   {
-    prepared[[i]] <- smoothImage(prepared[[i]])
+    
+    #Use chosen smoothing on image (no smoothing, if none given)
+    if (smoothFunc=='lowpass') prepared[[i]] <- smoothImage(prepared[[i]])
+    else if (smoothFunc=='average')  prepared[[i]] <- smoothAverageImage(prepared[[i]])
+    else if (smoothFunc=='gaussian')  prepared[[i]] <- gaussianBlur(prepared[[i]], gaussSigma)
+    
   }  
+ 
   
   #extract individual ciffers
   #xStep and yStep is used to ensure the first corner of the
@@ -137,12 +157,12 @@ loadSinglePersonsData <- function(DPI,groupNr,groupMemberNr,folder){
   
   #xStepT and yStepT is used to ensure that the feature vectors
   #from all people have the same size.
-
+  
   xStepT <- 60*DPI/300
   yStepT <- 60*DPI/300
   
   dataMatrix <- matrix(1:((xStepT-2)*(yStepT-2) + 1)*10*20*20, nrow=10*20*20, ncol=(xStepT-2)*(yStepT-2) + 1)
-
+  
   for(pages in 1:5)
   {
     for(box in 1:2)
@@ -153,7 +173,7 @@ loadSinglePersonsData <- function(DPI,groupNr,groupMemberNr,folder){
         for(cifY in 1:20)
         {
           aYbase <- corners[(pages-1)*2 + box,2] + yStep*(cifY-1)
-         
+          
           dataMatrix[((pages-1)*2 + box - 1)*20*20 + (cifY-1)*20 + cifX ,1 ] <- (pages-1)*2 + box - 1
           
           for(px in 1:(xStepT-2))
@@ -172,3 +192,70 @@ loadSinglePersonsData <- function(DPI,groupNr,groupMemberNr,folder){
   
   return(dataMatrix)
 }
+
+###### Function to load multiple data ####
+#ADDED last parameter smoothingFunc. Possible values: "none","gaussian", "lowpass", "average"
+#If smmoothFunc="gaussian" then gaussSigma must be a Vector with different sigmas (eg. )
+loadMultiplePersonsData <- function(dpi=300,startgrp=4,endgrp=4,location, smoothFunc, gaussSigma)
+{
+  options(show.error.messages = FALSE)
+  memstart=0
+  x=try(loadSinglePersonsData(dpi,startgrp,0,location))#DPI change
+  if(class(x)=="try-error")
+  {
+    x=loadSinglePersonsData(dpi,startgrp,1,location)#DPI change
+    memstart=1
+  }
+  
+  for(i in startgrp:endgrp)
+  {
+    for(j in 0:4)
+    {
+      if(j!=memstart||i!=startgrp)
+      {
+        y=try(loadSinglePersonsData(dpi,i,j,location))#DPI change
+        if(class(y)!="try-error")
+        {
+          x<-rbind2(y,x)
+        }
+      }
+    }
+  }
+  options(show.error.messages = TRUE)
+  return(x)
+}
+
+
+#-------------------------------------------------------------
+# Function that draws one square (with Cipher) of the data 
+#-------------------------------------------------------------
+drawCipher <- function(oneCipherVector, title, subtitle){
+  #Draw an image of one square
+  #Square of one single cipher
+  #initialize 
+  columns = length(oneCipherVector)-1
+  dimensions = sqrt(columns)
+  cipherSquare = array(0, dim=c(dimensions,dimensions))
+  
+  x = 1
+  iteration = 0 
+  
+  
+  #get all values (but first one-> label for digit-value) of one row in data_test and save them in square
+  for(col in 2:columns){
+    y = col-(dimensions*iteration)
+    cipherSquare[x,y] = oneCipherVector[col]
+    
+    #next row if dimension value of square is reached (last col-value in row)
+    if(col%%dimensions==0){
+      x = x + 1
+      iteration = iteration + 1
+    }
+  }
+  
+  m = cipherSquare
+  image(m,col = grey(seq(0, 1, length = 256)),sub=subtitle)  
+  title(main = title, font.main = 4)
+}
+
+
