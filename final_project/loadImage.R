@@ -200,10 +200,10 @@ loadMultiplePersonsData <- function(dpi=300,startgrp=4,endgrp=4,location, smooth
 {
   options(show.error.messages = FALSE)
   memstart=0
-  x=try(loadSinglePersonsData(dpi,startgrp,0,location))#DPI change
+  x=try(loadSinglePersonsData(dpi,startgrp,0,location,smoothFunc,gaussSigma))#DPI change
   if(class(x)=="try-error")
   {
-    x=loadSinglePersonsData(dpi,startgrp,1,location)#DPI change
+    x=loadSinglePersonsData(dpi,startgrp,1,location,smoothFunc,gaussSigma)#DPI change
     memstart=1
   }
   
@@ -213,7 +213,7 @@ loadMultiplePersonsData <- function(dpi=300,startgrp=4,endgrp=4,location, smooth
     {
       if(j!=memstart||i!=startgrp)
       {
-        y=try(loadSinglePersonsData(dpi,i,j,location))#DPI change
+        y=try(loadSinglePersonsData(dpi,i,j,location,smoothFunc,gaussSigma))#DPI change
         if(class(y)!="try-error")
         {
           x<-rbind2(y,x)

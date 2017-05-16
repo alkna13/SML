@@ -7,6 +7,8 @@
 
 #### 1. Source data script ####
 source("A:/Machine_Learning_Git/SML/final_project/loadImage.R")
+library(reshape2)
+library(ggplot2)
 
 #currently using preprocessed (automatic corner and contour detection with rotation and centering automation)
 #images in preprocessed folder
@@ -21,14 +23,14 @@ sigma = 1 #only needed if smoothing = "gaussian"
 pre_pca = FALSE
 normalization = FALSE
 group = 4
-member = all
+member = "all"
 
 #### 3. Load data ####
 start.time <- proc.time()
-#x = loadSinglePersonsData(dpi,group,member,pathToGroups,smoothing,sigma) #first nr= group, scnd nr = member
-x = loadMultiplePersonsData(dpi,group,group,pathToGroups,smoothing,sigma)
+#x = loadSinglePersonsData(dpi,group,member,pathToGroups,smoothing,sigma) #1Person
+x = loadMultiplePersonsData(dpi, group, group, pathToGroups, smoothing, sigma)#mult. person
 data.loading.time <- proc.time() - start.time
-print(paste("Time for loading data: ", end.time))
+print(paste("Time for loading data: ", data.loading.time))
 
 #Plot every cipher once
 iterator = 400
@@ -185,6 +187,6 @@ plotKnn <- ggplot(data = df.melted, aes(x=reorder(k), y = value, color = variabl
   facet_grid(variable ~ ., scales='free')
 
 # Save table and plots
-ggsave(filename=paste("/",outputFolder,"/plot_knn.jpeg"), plot=plotKnn)
-write.csv2(data_out,paste("/",outputFolder,"/knn_results.csv"))
+ggsave(filename=cat("/",outputFolder,"/plot_knn.jpeg"), plot=plotKnn)
+write.csv2(data_out,cat("/",outputFolder,"/knn_results.csv"))
            
