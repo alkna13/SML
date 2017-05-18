@@ -256,6 +256,7 @@ drawCipher <- function(oneCipherVector, title, subtitle){
   m = cipherSquare
   image(m,col = grey(seq(0, 1, length = 256)),sub=subtitle)  
   title(main = title, font.main = 4)
+  return(image)
 }
 
 
