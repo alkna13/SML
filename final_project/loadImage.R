@@ -18,73 +18,17 @@ library("caret")
 #The example code use the functions to load and smoothen the image data.
 #lastly it converts the data into a table more suitable for R based classification 
 
-
 #-------------------------------------------------------------
-#Low pass smoothing function (standard)
+#Average smoothing (median filter)
 #-------------------------------------------------------------
-smoothImage <- function(grayImg){
-  #two ways of specifying kernel:
-  # kernel <- matrix( 
-  #           c(1, 1, 1, 
-  #             1, 1, 1, 
-  #             1, 1, 1), # the data elements 
-  #           3,              # number of rows 
-  #           3)
-  # kernel <- kernel/9
-  # kernel
-  kernel <- matrix( 
-    1, # the data elements 
-    3,# number of rows 
-    3)
-  kernel <- kernel/9
-  #print(kernel)
-  
-  #using r library for smoothing
-  smoothed <- filter2(grayImg, kernel)
-  
-  
+smoothAverageImage <- function(grayImg){
+  smoothed <-- medianFilter(grayImg,size=4)
   return(smoothed)
 }
 
-# Average smoothing (simple implementation)
-smoothAverageImage <- function(gray){
-  
-  imgWidth <- length(gray[1,])
-  imgHeight <- length(gray[,1])
-  kernelSize <- 1
-  for(px in 1:imgWidth)
-  {
-    for(py in 1:imgHeight)
-    {
-      baseX <- px - kernelSize
-      endX <- px + kernelSize
-      if(baseX < 1){baseX<-1}
-      if(endX > imgWidth){endX<-imgWidth}
-      
-      baseY <- py - kernelSize
-      endY <- py + kernelSize
-      if(baseY < 1){baseY<-1}
-      if(endY > imgHeight){endY<-imgHeight}
-      
-      
-      value <- 0
-      for(pkx in baseX:endX)
-      {
-        for(pky in baseY:endY)
-        {
-          value <- value+gray[pky,pkx]
-        }
-      }
-      kernelValues <- (endY-baseY+1)*(endX-baseX+1)
-      value <- value/kernelValues
-      
-      smoothed[py,px] <- value
-    }
-  }
-  return(smoothed)
-}
-
-# Gaussian smoothing (EBImage lib)
+#-------------------------------------------------------------
+#Gaussian smoothing (with sigma value)
+#-------------------------------------------------------------
 gaussianBlur <- function(image, sigma){
   bluredImg = gblur(image, sigma)
   return(bluredImg)
