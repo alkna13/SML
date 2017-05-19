@@ -168,7 +168,7 @@ loadMultiplePersonsData <- function(dpi=300,startgrp=4,endgrp=4,location)
   total_var_plot=array(,dim=c(1,length(pca_train$sdev)))    #array tracking accumulated total variance(absolute)
   for(i in 1:length(pca_train$sdev))
   {
-    total_var<-total_var + pca_train$sdev[i]
+    total_var<-total_var + (pca_train$sdev[i])^2
     total_var_plot[i]<-total_var
   }
   plot(x=1:length(total_var_plot),y=total_var_plot,main="Accumulated Variance (absolute)",xlab="PC",ylab="Acumulated Variance")

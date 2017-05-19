@@ -6,20 +6,20 @@
 #######################################################
 
 #### 1. Source data script ####
-source("A:/Machine_Learning_Git/SML/final_project/loadImage.R")
+source("preProcessing_runs/loadImage.R")
 library(reshape2)
 library(ggplot2)
 
-#use preprocessed folder for centering(automatic corner and contour detection with rotation and centering automation)
-pathToGroups = "A:/Machine_Learning/2017/group"
+#use preprocessed folder (DONT RENAME THE FOLDER) for centering(automatic corner and contour detection with rotation and centering automation)
+pathToGroups = "2017/group"
 #output folder to put all result documents in
-outputFolder = "test1"
+outputFolder = "pca1"
 
 #### 2. Define preprocessing parameters ####
 dpi = 300
 smoothing = "none" # can be "gaussian" or "average" or "none"/NULL
-sigma = 1 #only needed if smoothing = "gaussian"
-pre_pca = FALSE
+sigma = 0 #only needed if smoothing = "gaussian"
+pre_pca = TRUE
 normalization = FALSE
 group = 4 #put in number for single group or "all" for whole course
 member = "all" #put in a nr for single person or "all" for whole group
@@ -35,8 +35,6 @@ if (group == "all") {
 } else{
   x = loadSinglePersonsData(dpi, group, member, pathToGroups, smoothing, sigma) #1Person
 }
-
-
 data.loading.time <- proc.time() - start.time
 print(paste("Time for loading data: ", data.loading.time[3]))
 
@@ -87,33 +85,13 @@ for (c in 1:10) {
   
 }
 
-#### 4. Do PCA and normalization (if necessary) ####
-if (pre_pca) {
-  #leave out first column --> class identifier
-  pca <- prcomp(x[, 2:dim(x)[2]])
-  
-  if (normalization) {
-    #do normalization
-    dataset <- scale(pca$x)
-  } else{
-    dataset <- pca$x
-  }
-  
-} else {
-  #dataset is just shuffled data
-  dataset <- x
-}
-
-rm(x)
-
-
-#### 5. Define KNN parameters ####
+#### 4. Define KNN parameters ####
 #parameters
 test_split = 0.8  #how large should the training set be 0.9=90/10 training/testing
 person_dependent = TRUE #if multiple persons used (p.dep.= vertical split, p.indep. horizontal split)
-k_inc = 90   #value by k will be incremented after each run
+k_inc = 1  #value by k will be incremented after each run
 k_start = 10    #starting k value. will just be the k used if k_runs=1
-k_end = 100
+k_end = 10
 k_runs = floor((k_end - k_start) / k_inc) + 1
 print (paste(k_runs, " will be run"))
 
@@ -160,7 +138,7 @@ if (person_dependent) {
 data_out[, 10] = splitText
 
 #5. Prepare dataset
-
+dataset <- x
 #create the training set
 dataset_train <-
   array(, dim = c((dim(dataset)[1] * test_split), dim(dataset)[2]))
@@ -233,6 +211,81 @@ for (i in 1:dim(dataset_test)[1])
 {
   test_class[i] = dataset_test[i, 1]
 }
+
+
+#### 5. Do PCA and normalization (optional) ####
+if (pre_pca) {
+  start.time <- proc.time()
+  #leave out first column --> class identifier
+  pca_train <- prcomp(dataset_train[, 2:dim(dataset_train)[2]])
+  #apply the same manipullation on test set
+  pca_test <- dataset_test[,2:dim(dataset_test)[2]] %*% pca_train$rotation
+  
+  if (normalization) {
+    #do normalization
+    dataset_train[,2:dim(dataset_train)[2]] <- scale(pca_train$x)
+    dataset_test[,2:dim(dataset_test)[2]] <- scale(pca_test$x)
+  } else{
+    dataset_train[,2:dim(dataset_train)[2]] <- pca_train$x
+  }
+  end.time.knn <- proc.time()-start.time
+  print(paste("Time for PCA: ",end.time.knn[3]))
+  #add time in output array
+  data_out[, 8] = paste("TRUE (t=",end.time.knn[3],"s")
+  
+  
+  #add class identifiers again
+  dataset_train[,1] <- train_class[i]
+  dataset_test[,1] <- test_class[i]
+  
+  #Evaluate PCA
+  subText = paste("Group: ",group,"member: ", member,"| Split:", splitText)
+  #variance
+  variances <- c(1,length(pca_train$sdev))
+  for(i in 1:length(pca_train$sdev))
+  {
+    variances[i]<-(pca_train$sdev[i])^2
+  }
+  
+  plot(variances,main="Variance by PCA (training data)", xlab="PCA",ylab="Variance", sub=subText)
+  dev.copy(png, filename = paste(outputFolder, "/variance_per_PCA.png", sep =""))
+  dev.off ()
+  write.csv2(variances, file = paste(outputFolder,"/variance_per_PCA.csv",sep="")) # save file for all results
+  
+  #accumulated variance absolute
+  total_var=0                                         #maximum variance counter variable
+  total_var_plot=array(,dim=c(1,length(variances)))    #array tracking accumulated total variance(absolute)
+  for(i in 1:length(pca_train$sdev))
+  {
+    total_var<-total_var + variances[i]
+    total_var_plot[i]<-total_var
+  }
+  
+  
+  #plot and save accumulated Variance
+  
+  plot(x=1:length(total_var_plot),y=total_var_plot,main="Accumulated Variance (absolute, training)",xlab="PC",ylab="Acumulated Variance",sub = subText)
+  dev.copy(png, filename = paste(outputFolder, "/acc_variance.png", sep =""))
+  dev.off ()
+  write.csv2(total_var_plot, file = paste(outputFolder,"/acc_variance.csv",sep="")) # save file for all results
+  
+  #accumulated variance percentage
+  acc_var=0                                           #accumulated variance
+  acc_var_plot=array(,dim=c(1,length(variances)))      #array tracking accumulated variance(%)
+  for(i in 1:length(variances))
+  {
+    acc_var<-acc_var+variances[i]
+    acc_var_plot[i]<-acc_var/(total_var/100)
+  }
+  plot(1:length(acc_var_plot),acc_var_plot,main="Accumulated Variance (%, training)",xlab="PC",ylab="Acumulated Variance [%]", sub=subText)
+  dev.copy(png, filename = paste(outputFolder, "/acc_variance_perc.png", sep =""))
+  dev.off ()
+  write.csv2(total_var_plot, file = paste(outputFolder,"/acc_variance_perc.csv",sep="")) # save file for all results
+} 
+
+#remove unnecessary variables
+rm(x)
+
 
 
 #### 6. Begin knn ####
