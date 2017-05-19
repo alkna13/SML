@@ -168,6 +168,7 @@ if (member != "all" | person_dependent == FALSE) {
     dataset_test[i, ] <- dataset[i + (dim(dataset)[1] * test_split), ]
   }
 } else{
+  
   #For multiple persons and person dependent:
   personRows = 4000 #amount of rows for each user
   trainDataRows = personRows*test_split
@@ -193,8 +194,12 @@ if (member != "all" | person_dependent == FALSE) {
     dataset_train[startRowTrain:(startRowTrain+trainDataRows-1),]<- dataset_train_p
     dataset_test[startRowTest:(startRowTest+(personRows-trainDataRows)-1),]<- dataset_test_p
   }
-  rm(dataset_train_p)
-  rm(dataset_test_p)
+  #shuffle training and test set seperately
+  set.seed(995)
+  dataset_train <- dataset_train[sample(nrow(dataset_train)), ]
+  dataset_test <- dataset_test[sample(nrow(dataset_test)), ]
+  
+  rm(dataset_train_p, dataset_test_p)
   rm(rowStart,rowEnd, dataset_person)
 }
 
@@ -222,11 +227,11 @@ if (pre_pca) {
   pca_test <- dataset_test[,2:dim(dataset_test)[2]] %*% pca_train$rotation
   
   if (normalization) {
-    #do normalization
-    dataset_train[,2:dim(dataset_train)[2]] <- scale(pca_train$x)
-    dataset_test[,2:dim(dataset_test)[2]] <- scale(pca_test$x)
+    dataset_train[,2:dim(dataset_train)[2]] <- normalize(pca_train$x)
+    dataset_test[,2:dim(dataset_test)[2]] <-  normalize(pca_train)
   } else{
     dataset_train[,2:dim(dataset_train)[2]] <- pca_train$x
+    dataset_train[,2:dim(dataset_train)[2]] <- pca_test
   }
   end.time.knn <- proc.time()-start.time
   print(paste("Time for PCA: ",end.time.knn[3]))

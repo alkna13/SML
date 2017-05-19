@@ -18,6 +18,15 @@ library("caret")
 #The example code use the functions to load and smoothen the image data.
 #lastly it converts the data into a table more suitable for R based classification 
 
+
+#-------------------------------------------------------------
+#Normalization function (min/max-normalization)
+#-------------------------------------------------------------
+normalize <- function(x) { 
+  x <- sweep(x, 2, apply(x, 2, min)) 
+  sweep(x, 2, apply(x, 2, max), "/") 
+}
+
 #-------------------------------------------------------------
 #Average smoothing (median filter)
 #-------------------------------------------------------------
@@ -29,6 +38,7 @@ smoothAverageImage <- function(grayImg){
 #-------------------------------------------------------------
 #Gaussian smoothing (with sigma value)
 #-------------------------------------------------------------
+
 gaussianBlur <- function(image, sigma){
   bluredImg = gblur(image, sigma)
   return(bluredImg)
@@ -80,7 +90,7 @@ loadSinglePersonsData <- function(DPI,groupNr,groupMemberNr,folder,smoothFunc,ga
       prepared[[i]] <- ciffers[[i]]
     }  
   }
-
+  
   #smooth images based on the funtion in the top
   for(i in 1:5)
   {
@@ -91,7 +101,7 @@ loadSinglePersonsData <- function(DPI,groupNr,groupMemberNr,folder,smoothFunc,ga
     else if (smoothFunc=='gaussian')  prepared[[i]] <- gaussianBlur(prepared[[i]], gaussSigma)
     
   }  
- 
+  
   
   #extract individual ciffers
   #xStep and yStep is used to ensure the first corner of the
@@ -142,7 +152,7 @@ loadSinglePersonsData <- function(DPI,groupNr,groupMemberNr,folder,smoothFunc,ga
 #If smmoothFunc="gaussian" then gaussSigma must be a Vector with different sigmas (eg. )
 loadMultiplePersonsData <- function(dpi=300,startgrp=4,endgrp=4,location, smoothFunc, gaussSigma)
 {
-  options(show.error.messages = FALSE)
+  options(show.error.messages = TRUE)
   memstart=0
   x=try(loadSinglePersonsData(dpi,startgrp,0,location,smoothFunc,gaussSigma))#DPI change
   if(class(x)=="try-error")
