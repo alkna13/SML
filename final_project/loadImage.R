@@ -90,7 +90,7 @@ loadSinglePersonsData <- function(DPI,groupNr,groupMemberNr,folder,smoothFunc,ga
       prepared[[i]] <- ciffers[[i]]
     }  
   }
-  
+
   #smooth images based on the funtion in the top
   for(i in 1:5)
   {
@@ -101,7 +101,7 @@ loadSinglePersonsData <- function(DPI,groupNr,groupMemberNr,folder,smoothFunc,ga
     else if (smoothFunc=='gaussian')  prepared[[i]] <- gaussianBlur(prepared[[i]], gaussSigma)
     
   }  
-  
+ 
   
   #extract individual ciffers
   #xStep and yStep is used to ensure the first corner of the

@@ -1,0 +1,2 @@
+"";"Group_#";"Member#";"DPI";"Centered";"Smoothing";"Gaussian_Sigma";"Data_Loading_Time [s]";"PCA";"Normalized";"split";"k";"accuracy";"k_time [s]"
+"1";"4";"all";"300";"FALSE";"none";"0";"224.511999999999";"TRUE (t= 60.9789999999994 s";"TRUE (t= 3.58499999999913 s";"0.8  (Person dependent)";"10";"82.625";"1.69399999999951"
