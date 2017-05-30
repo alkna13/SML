@@ -158,7 +158,7 @@ doKnn <- function(xPca, saveResults) {
 #use preprocessed folder (DONT RENAME THE FOLDER) for centering(automatic corner and contour detection with rotation and centering automation)
 pathToGroups = "allData/preProcessed/2017/group"
 #output folder to put all result documents in
-outputFolder = "optimize_tests"
+outputFolder = "optimize_tests_g3u4_k20_PID"
 
 dpi = 100
 smoothing = "gaussian" # can be "gaussian" or "average" or "none"/NULL
@@ -185,16 +185,12 @@ personsNrTotal=7 #number of persons in selected groups
 #parameters
 minVote = 0
 test_split = 0.8  #how large should the training set be 0.9=90/10 training/testing
-person_dependent = TRUE #if multiple persons used (p.dep.= vertical split, p.indep. horizontal split)
+person_dependent = FALSE #if multiple persons used (p.dep.= vertical split, p.indep. horizontal split)
 k_inc = 1  #value by k will be incremented after each run
 k_start = 1   #starting k value. will just be the k used if k_runs=1
-k_end = 100
+k_end = 20
 k_runs = floor((k_end - k_start) / k_inc) + 1
 print (paste(k_runs, " runs of k will be run with minimum vote of:", minVote ))
-
-#Define array for all Persons and all ks
-data_out_all <- array(0, dim = c(k_runs*personsNrTotal, 13))
-
 
 #### 5. Load data (Start of Loop) ####
 
@@ -272,7 +268,7 @@ colnames(data_out) <-
     "accuracy",
     "k_time [s]",
     "min_votes",
-    "doubts",
+    "doubts"
   )
 
 data_out[, 1] = group
@@ -510,8 +506,8 @@ if(pre_pca){
   k_runs_old <- k_runs
   
   k_inc = 1  #value by k will be incremented after each run
-  k_start = 10    #starting k value. will just be the k used if k_runs=1
-  k_end = 10
+  k_start = 1    #starting k value. will just be the k used if k_runs=1
+  k_end = 20
   k_runs = 1
   results_firstXPCAs <- array(, dim = c(100, 5))
   for (xPca in 20:length(firstXPCAs)) {

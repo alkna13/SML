@@ -1,0 +1,46 @@
+;Group_#;Member#;DPI;Centered;Smoothing;Gaussian_Sigma;Data_Loading_Time [s];PCA;Normalized;split;k;accuracy;k_time [s];min_votes;doubts
+1;3 and 4;all;100;TRUE;gaussian;0.6;43.177;FALSE;FALSE;0.8  (Person independent);1;98,43;144,74;0;0
+2;3 and 4;all;100;TRUE;gaussian;0.6;43.177;FALSE;FALSE;0.8  (Person independent);2;98,27;145,39;0;0
+3;3 and 4;all;100;TRUE;gaussian;0.6;43.177;FALSE;FALSE;0.8  (Person independent);3;98,41;144,56;0;0
+4;3 and 4;all;100;TRUE;gaussian;0.6;43.177;FALSE;FALSE;0.8  (Person independent);4;98,57;145,87;0;0
+5;3 and 4;all;100;TRUE;gaussian;0.6;43.177;FALSE;FALSE;0.8  (Person independent);5;98,48;145,52;0;0
+6;3 and 4;all;100;TRUE;gaussian;0.6;43.177;FALSE;FALSE;0.8  (Person independent);6;98,46;146,00;0;0
+7;3 and 4;all;100;TRUE;gaussian;0.6;43.177;FALSE;FALSE;0.8  (Person independent);7;98,34;144,27;0;0
+8;3 and 4;all;100;TRUE;gaussian;0.6;43.177;FALSE;FALSE;0.8  (Person independent);8;98,25;147,21;0;0
+9;3 and 4;all;100;TRUE;gaussian;0.6;43.177;FALSE;FALSE;0.8  (Person independent);9;98,38;146,44;0;0
+10;3 and 4;all;100;TRUE;gaussian;0.6;43.177;FALSE;FALSE;0.8  (Person independent);10;98,34;146,10;0;0
+11;3 and 4;all;100;TRUE;gaussian;0.6;43.177;FALSE;FALSE;0.8  (Person independent);11;98,25;146,34;0;0
+12;3 and 4;all;100;TRUE;gaussian;0.6;43.177;FALSE;FALSE;0.8  (Person independent);12;98,16;144,73;0;0
+13;3 and 4;all;100;TRUE;gaussian;0.6;43.177;FALSE;FALSE;0.8  (Person independent);13;98,23;144,87;0;0
+14;3 and 4;all;100;TRUE;gaussian;0.6;43.177;FALSE;FALSE;0.8  (Person independent);14;98,13;143,50;0;0
+15;3 and 4;all;100;TRUE;gaussian;0.6;43.177;FALSE;FALSE;0.8  (Person independent);15;98,16;143,35;0;0
+16;3 and 4;all;100;TRUE;gaussian;0.6;43.177;FALSE;FALSE;0.8  (Person independent);16;98,02;147,63;0;0
+17;3 and 4;all;100;TRUE;gaussian;0.6;43.177;FALSE;FALSE;0.8  (Person independent);17;98,00;149,69;0;0
+18;3 and 4;all;100;TRUE;gaussian;0.6;43.177;FALSE;FALSE;0.8  (Person independent);18;97,95;149,19;0;0
+19;3 and 4;all;100;TRUE;gaussian;0.6;43.177;FALSE;FALSE;0.8  (Person independent);19;97,86;149,67;0;0
+20;3 and 4;all;100;TRUE;gaussian;0.6;43.177;FALSE;FALSE;0.8  (Person independent);20;97,91;150,58;0;0
+;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;

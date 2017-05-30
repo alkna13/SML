@@ -29,7 +29,7 @@ doKnn <- function(xPca, saveResults) {
       
       #run knn test
       test_pred <<-
-                knn(dataset_train[, 2:(firstXPCAs[xPca] + 1)], dataset_test[,  2:(firstXPCAs[xPca] +
+        knn(dataset_train[, 2:(firstXPCAs[xPca] + 1)], dataset_test[,  2:(firstXPCAs[xPca] +
                                                                             1)], train_class, k)
       
       #stop timing
@@ -73,10 +73,6 @@ doKnn <- function(xPca, saveResults) {
     data_out[row, 11] <<- k
     data_out[row, 12] <<- accuracy
     data_out[row, 13] <<- ptm[3]
-    
-    #save all k data to summary array --> see last step
-    rowAll <- ((personNr*k_runs)-k_runs+row)
-    data_out_all[rowAll,] <<- data_out[row,]
     
     #increase k
     k = k + k_inc
@@ -130,17 +126,17 @@ doKnn <- function(xPca, saveResults) {
     # Save table and plots
     if(pre_pca){
       #file names if pca was applied
-      ggsave(filename = paste(outputFolderPerson, "/plot_knn_PCAs_",firstXPCAs[xPca],".png", sep = ""))
-      textFilename1 = paste(outputFolderPerson, "/all_results_PCAs_", firstXPCAs[xPca], ".csv", sep = "")
-      textFilename2 = paste(outputFolderPerson, "/total_results_PCAs_",firstXPCAs[xPca],".csv", sep = "")
-      textFilename3 = paste(outputFolderPerson, "//confusion_matrix_PCAs_",firstXPCAs[xPca],".csv", sep = "")
+      ggsave(filename = paste(outputFolder, "/plot_knn_PCAs_",firstXPCAs[xPca],".png", sep = ""))
+      textFilename1 = paste(outputFolder, "/all_results_PCAs_", firstXPCAs[xPca], ".csv", sep = "")
+      textFilename2 = paste(outputFolder, "/total_results_PCAs_",firstXPCAs[xPca],".csv", sep = "")
+      textFilename3 = paste(outputFolder, "/confusion_matrix_PCAs_",firstXPCAs[xPca],".csv", sep = "")
       
     }else{
       #file names if pca was NOT applied
-      ggsave(filename = paste(outputFolderPerson, "/plot_knn.png", sep = ""))
-      textFilename1 = paste(outputFolderPerson, "/all_results_knn.csv", sep = "")
-      textFilename2 = paste(outputFolderPerson, "/total_results_knn.csv", sep = "")
-      textFilename3 = paste(outputFolderPerson, "/confusion_matrix.csv", sep = "")
+      ggsave(filename = paste(outputFolder, "/plot_knn.png", sep = ""))
+      textFilename1 = paste(outputFolder, "/all_results_knn.csv", sep = "")
+      textFilename2 = paste(outputFolder, "/total_results_knn.csv", sep = "")
+      textFilename3 = paste(outputFolder, "/confusion_matrix.csv", sep = "")
     }
     write.csv2(data_out, file = textFilename1) # save file for results of each k
     write.csv2(total_values, file = textFilename2) # save file for total sum results
@@ -158,7 +154,7 @@ doKnn <- function(xPca, saveResults) {
 #use preprocessed folder (DONT RENAME THE FOLDER) for centering(automatic corner and contour detection with rotation and centering automation)
 pathToGroups = "allData/preProcessed/2017/group"
 #output folder to put all result documents in
-outputFolder = "test_save_files"
+outputFolder = "all_Persons_person_dependent"
 
 dpi = 100
 smoothing = "gaussian" # can be "gaussian" or "average" or "none"/NULL
@@ -166,22 +162,17 @@ sigma = 0.6 #only needed if smoothing = "gaussian"
 pre_pca = FALSE
 normalization = FALSE
 
-#set start group and  member
-group = 0 #put in number for single group to start with
-member = 1 #put in a nr for single person to start with
+#set group and#set start group and end group (number or "all" for all)
+group = "all"
+member = "all" 
 
 #print loaded Ciphers from 0-9 once if TRUE and saves it in output Folder
-printCiphers=TRUE
+printCiphers=FALSE
 
 #create new ouput Folder
 dir.create(outputFolder)
 
 personsNrTotal=35 #number of persons in class
-all_persons_results <-array(,dim=c(personsNrTotal,7))
-
-
-personNr = 1 #person to calculate
-endReached = FALSE #will be checked at the end of following while loop
 
 #### 4. Define KNN parameters ####
 #parameters
@@ -198,14 +189,9 @@ data_out_all <- array(0, dim = c(k_runs*personsNrTotal, 13))
 
 
 #### 5. Load data (Start of Loop) ####
-while(!endReached &&member<3){
-  print(paste("Start calculating person",personNr))
-  #Create folders for person
-  dir.create(paste(outputFolder,"/Group",group,sep=""))
-  outputFolderPerson <- paste(outputFolder,"/Group",group,"/member",member, sep="")
-    dir.create(outputFolderPerson)
-  #start measuring time
-  start.time <- proc.time()
+
+#start measuring time
+start.time <- proc.time()
 
 #load all course, all members of one group or one person
 if (group == "all") {
@@ -257,7 +243,7 @@ if(printCiphers){
                     ", centering:",
                     centeredText)
     img <- drawCipher(imageToPlot, textInfo, subText)
-    dev.copy(png, filename = paste(outputFolderPerson, "/cipher", c - 1, ".png", sep =
+    dev.copy(png, filename = paste(outputFolder, "/cipher", c - 1, ".png", sep =
                                      ""))
     dev.off ()
   }
@@ -450,10 +436,10 @@ if (pre_pca) {
     sub = subText
   )
   dev.copy(png,
-           filename = paste(outputFolderPerson, "/variance_per_PCA.png", sep = ""))
+           filename = paste(outputFolder, "/variance_per_PCA.png", sep = ""))
   dev.off ()
   write.csv2(variances,
-             file = paste(outputFolderPerson, "/variance_per_PCA.csv", sep = "")) # save file for all results
+             file = paste(outputFolder, "/variance_per_PCA.csv", sep = "")) # save file for all results
   
   #accumulated variance absolute
   total_var = 0                                         #maximum variance counter variable
@@ -475,11 +461,11 @@ if (pre_pca) {
     ylab = "Acumulated Variance",
     sub = subText
   )
-  dev.copy(png, filename = paste(outputFolderPerson, "/acc_variance.png", sep =
+  dev.copy(png, filename = paste(outputFolder, "/acc_variance.png", sep =
                                    ""))
   dev.off ()
   write.csv2(total_var_plot,
-             file = paste(outputFolderPerson, "/acc_variance.csv", sep = "")) # save file for all results
+             file = paste(outputFolder, "/acc_variance.csv", sep = "")) # save file for all results
   
   #accumulated variance percentage
   acc_var = 0                                           #accumulated variance
@@ -498,10 +484,10 @@ if (pre_pca) {
     sub = subText
   )
   dev.copy(png,
-           filename = paste(outputFolderPerson, "/acc_variance_perc.png", sep = ""))
+           filename = paste(outputFolder, "/acc_variance_perc.png", sep = ""))
   dev.off ()
   write.csv2(total_var_plot,
-             file = paste(outputFolderPerson, "/acc_variance_perc.csv", sep = "")) # save file for all results
+             file = paste(outputFolder, "/acc_variance_perc.csv", sep = "")) # save file for all results
 } # end of pca
 
 #remove unnecessary variables
@@ -532,7 +518,7 @@ if(pre_pca){
       "StdDev",
       "Time_Avg",
       "Time_Total")
-  textFilenameTEMP = paste(outputFolderPerson, "/total_results_firstXPCAs.csv", sep = "")
+  textFilenameTEMP = paste(outputFolder, "/total_results_firstXPCAs.csv", sep = "")
   write.csv2(results_firstXPCAs, file = textFilenameTEMP) # save file for total sum results
   pca_max <- which.max(results_firstXPCAs[,1])
   
@@ -541,6 +527,7 @@ if(pre_pca){
   k_runs <- k_runs_old
   rm(k_start_old,k_runs_old,k_end_old,k_start_old)
 }
+
 #### 7. Begin knn ####
 #use previous found maximum and save results to output folder
 
@@ -551,70 +538,3 @@ if(pre_pca){
 }else{
   total_knn_results <- doKnn(0,TRUE)
 }
-
-all_persons_results[personNr,1] <-group
-all_persons_results[personNr,2] <- member
-all_persons_results[personNr,3:7] <-total_knn_results
-
-
-
-#### 8. Check if all persons are calculated ####
-#increase member see if it is exists
-exists = FALSE
-member <- member+1
-path <- paste(pathToGroups,group,"/member",member,sep="")
-
-while(!dir.exists(file.path(path))&&member<10){
-  member <- member+1
-  path <- paste(pathToGroups,group,"/member",member,sep="")
-}
-if(member<10){
-  exists = TRUE  
-}else{
-  #no mor member in group, so increase group
-
-  #if it doesnt exist, go to next group
-  member <- 0
-  group <- group+1
-  path <- paste(pathToGroups,group,"/member",member,sep="")
-  if(!dir.exists(file.path(path))){
-    #iterate member# if there is any member between 0-10 in the next group
-    while(!dir.exists(file.path(path))&&member<10){
-      member <- member+1
-      path <- paste(pathToGroups,group,"/member",member,sep="")
-    }
-    #if the next group and/or no members in it exist, all persons data were loaded
-    if(member>=10) endReached=TRUE
-  }
-}
-personNr = personNr+1
-}# end while loop one single user
-
-#### 9. Save summary tables ####
-colnames(all_persons_results) <-
-  c("group","person","Accuracy_Avg",
-    "Variance",
-    "StdDev",
-    "Time_Avg",
-    "Time_Total")
-colnames(data_out_all) <-
-  c(
-    "Group_#",
-    "Member#",
-    "DPI",
-    "Centered",
-    "Smoothing",
-    "Gaussian_Sigma",
-    "Data_Loading_Time [s]",
-    "PCA",
-    "Normalized",
-    "split",
-    "k",
-    "accuracy",
-    "k_time [s]"
-  )
-
-textFilenameSummary= paste(outputFolder, "/allPersonsResults.csv", sep = "")
-textFilenameAllKs= paste(outputFolder, "/allPersonsResultsWithAllK.csv", sep = "")
-write.csv2(all_persons_results, file = textFilenameSummary) # save file for total sum results
-write.csv2(data_out_all, file = textFilenameAllKs) # save file for total sum result
